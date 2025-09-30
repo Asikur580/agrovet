@@ -1,0 +1,432 @@
+[05-Aug-2025 23:08:11 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[05-Aug-2025 23:10:14 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[05-Aug-2025 23:23:54 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[05-Aug-2025 23:28:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[05-Aug-2025 23:36:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[05-Aug-2025 23:42:51 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[06-Aug-2025 00:30:13 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[06-Aug-2025 00:32:22 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[06-Aug-2025 00:35:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[06-Aug-2025 00:39:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[06-Aug-2025 00:41:51 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[06-Aug-2025 00:45:07 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11
+[06-Aug-2025 00:47:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[06-Aug-2025 01:13:30 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[06-Aug-2025 01:14:35 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[06-Aug-2025 01:16:35 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[06-Aug-2025 01:19:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[06-Aug-2025 01:31:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[10-Aug-2025 07:37:57 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[10-Aug-2025 07:38:00 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[10-Aug-2025 07:38:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11
+[10-Aug-2025 07:38:57 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[10-Aug-2025 07:40:04 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[10-Aug-2025 07:41:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[10-Aug-2025 07:42:11 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[10-Aug-2025 07:43:15 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[10-Aug-2025 07:44:17 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[10-Aug-2025 07:45:20 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[10-Aug-2025 07:46:24 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[10-Aug-2025 07:47:29 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[10-Aug-2025 07:48:34 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[10-Aug-2025 07:49:40 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[10-Aug-2025 07:50:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[10-Aug-2025 07:51:51 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[10-Aug-2025 07:54:57 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[10-Aug-2025 07:56:49 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[10-Aug-2025 08:00:36 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[10-Aug-2025 08:03:18 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[10-Aug-2025 08:04:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[10-Aug-2025 08:05:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[10-Aug-2025 08:06:10 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[10-Aug-2025 08:16:44 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[10-Aug-2025 08:29:15 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[10-Aug-2025 08:30:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[10-Aug-2025 08:33:23 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11
+[10-Aug-2025 08:35:29 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[10-Aug-2025 08:36:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[10-Aug-2025 08:40:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[10-Aug-2025 08:41:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[10-Aug-2025 08:42:48 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[10-Aug-2025 08:43:48 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[10-Aug-2025 08:44:49 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[10-Aug-2025 08:46:53 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[10-Aug-2025 08:48:54 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[09-Sep-2025 22:58:41 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[09-Sep-2025 23:01:23 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[09-Sep-2025 23:07:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[09-Sep-2025 23:16:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[09-Sep-2025 23:29:40 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[09-Sep-2025 23:30:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[09-Sep-2025 23:51:55 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[09-Sep-2025 23:55:29 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11
+[09-Sep-2025 23:56:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[09-Sep-2025 23:58:40 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[09-Sep-2025 23:59:36 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[10-Sep-2025 00:00:39 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[10-Sep-2025 00:01:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[10-Sep-2025 00:13:34 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[10-Sep-2025 00:13:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[10-Sep-2025 00:15:26 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[10-Sep-2025 00:17:26 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[10-Sep-2025 00:25:24 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[14-Sep-2025 03:06:37 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[14-Sep-2025 03:06:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[14-Sep-2025 03:06:58 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[14-Sep-2025 03:07:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[14-Sep-2025 03:08:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[14-Sep-2025 03:09:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11
+[14-Sep-2025 03:10:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[14-Sep-2025 03:44:54 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[14-Sep-2025 03:45:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[14-Sep-2025 03:46:01 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[14-Sep-2025 03:47:05 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[14-Sep-2025 03:48:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[14-Sep-2025 03:49:10 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[14-Sep-2025 03:50:11 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[14-Sep-2025 03:51:17 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[14-Sep-2025 03:52:18 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[14-Sep-2025 03:53:21 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[14-Sep-2025 03:55:25 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[14-Sep-2025 04:00:38 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderProductFactory.php on line 12
+[14-Sep-2025 04:04:03 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceProductFactory.php on line 12
+[14-Sep-2025 04:04:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostCategoryFactory.php on line 10
+[14-Sep-2025 04:05:56 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeCostCategoryFactory.php on line 10
+[14-Sep-2025 04:08:00 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/DesignationFactory.php on line 11
+[14-Sep-2025 04:17:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/InvoiceFactory.php on line 12
+[14-Sep-2025 04:18:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CustomerFactory.php on line 11
+[14-Sep-2025 04:19:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CategoryFactory.php on line 10
+[14-Sep-2025 04:28:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/StockInOutFactory.php on line 12
+[14-Sep-2025 04:37:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/ProductFactory.php on line 12
+[14-Sep-2025 04:40:20 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SupplierFactory.php on line 10
+[14-Sep-2025 04:43:34 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/PaymentFactory.php on line 13
+[14-Sep-2025 04:44:37 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/OrderFactory.php on line 12
+[14-Sep-2025 04:45:43 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/UserFactory.php on line 13
+[14-Sep-2025 04:46:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/CostFactory.php on line 13
+[14-Sep-2025 04:47:50 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/SalaryFactory.php on line 11
+[14-Sep-2025 04:48:53 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/BrandFactory.php on line 10
+[14-Sep-2025 04:49:56 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Eloquent\Factories\Factory" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/factories/EmployeeFactory.php on line 11

@@ -1,0 +1,76 @@
+[05-Aug-2025 21:58:58 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[05-Aug-2025 21:59:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[06-Aug-2025 00:16:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6
+[06-Aug-2025 03:44:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[06-Aug-2025 03:49:52 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[06-Aug-2025 03:55:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6
+[06-Aug-2025 04:19:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[06-Aug-2025 04:21:19 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[06-Aug-2025 04:30:41 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6
+[09-Sep-2025 22:15:49 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[09-Sep-2025 22:15:50 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[09-Sep-2025 23:43:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6
+[10-Sep-2025 02:19:52 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[10-Sep-2025 02:27:07 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[10-Sep-2025 02:30:13 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6
+[10-Sep-2025 02:31:14 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[10-Sep-2025 02:46:31 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/web.php on line 5
+[10-Sep-2025 02:50:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/api.php on line 13
+[10-Sep-2025 02:53:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php:6
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/routes/console.php on line 6

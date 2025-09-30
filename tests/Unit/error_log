@@ -1,0 +1,24 @@
+[06-Aug-2025 07:12:25 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7
+[06-Aug-2025 12:18:54 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7
+[06-Aug-2025 12:31:37 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7
+[10-Sep-2025 05:07:02 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7
+[10-Sep-2025 09:06:09 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7
+[10-Sep-2025 09:19:41 UTC] PHP Fatal error:  Uncaught Error: Class "PHPUnit\Framework\TestCase" not found in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/tests/Unit/ExampleTest.php on line 7

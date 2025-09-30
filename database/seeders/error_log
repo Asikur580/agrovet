@@ -1,0 +1,384 @@
+[05-Aug-2025 23:04:05 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[06-Aug-2025 02:30:04 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php on line 9
+[06-Aug-2025 02:59:19 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[06-Aug-2025 03:07:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[06-Aug-2025 03:25:50 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[06-Aug-2025 03:40:30 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[06-Aug-2025 04:01:32 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[06-Aug-2025 04:06:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[06-Aug-2025 04:07:46 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[06-Aug-2025 04:09:53 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[06-Aug-2025 04:14:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[06-Aug-2025 04:26:31 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[06-Aug-2025 05:05:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php on line 9
+[06-Aug-2025 05:06:03 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[06-Aug-2025 06:16:21 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9
+[06-Aug-2025 09:11:55 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php on line 9
+[06-Aug-2025 12:48:21 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php on line 9
+[09-Aug-2025 18:24:49 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[09-Aug-2025 18:25:22 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php on line 9
+[09-Aug-2025 18:31:34 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[09-Aug-2025 18:33:39 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[09-Aug-2025 18:34:35 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[09-Aug-2025 18:35:41 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php on line 9
+[09-Aug-2025 18:36:44 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[09-Aug-2025 18:37:44 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[09-Aug-2025 18:38:49 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[09-Aug-2025 18:39:50 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[09-Aug-2025 18:40:52 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[09-Aug-2025 18:41:56 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[09-Aug-2025 18:43:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[09-Aug-2025 18:44:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[09-Aug-2025 18:45:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9
+[09-Aug-2025 18:50:31 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php on line 9
+[09-Aug-2025 18:53:05 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php on line 9
+[09-Aug-2025 18:53:54 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DatabaseSeeder.php on line 9
+[09-Aug-2025 18:54:55 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[09-Aug-2025 18:56:01 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[09-Aug-2025 18:57:07 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[09-Aug-2025 18:58:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[09-Aug-2025 19:01:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[09-Aug-2025 19:02:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[09-Aug-2025 19:03:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[09-Aug-2025 19:04:18 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[09-Aug-2025 19:05:20 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9
+[09-Aug-2025 19:06:21 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[09-Aug-2025 19:07:26 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[09-Aug-2025 19:09:33 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[09-Aug-2025 19:10:30 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[09-Aug-2025 19:12:36 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php on line 9
+[09-Sep-2025 23:11:57 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[10-Sep-2025 01:46:59 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[10-Sep-2025 01:47:15 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[10-Sep-2025 02:15:31 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[10-Sep-2025 02:59:56 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[10-Sep-2025 03:00:50 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[10-Sep-2025 03:01:54 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[10-Sep-2025 03:02:57 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[10-Sep-2025 03:03:59 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[10-Sep-2025 03:05:04 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[10-Sep-2025 03:06:07 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[10-Sep-2025 03:49:28 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[10-Sep-2025 03:54:48 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php on line 9
+[10-Sep-2025 04:11:03 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9
+[10-Sep-2025 06:48:30 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php on line 9
+[10-Sep-2025 09:33:07 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php on line 9
+[13-Sep-2025 12:06:45 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[13-Sep-2025 12:07:42 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[13-Sep-2025 12:08:47 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[13-Sep-2025 12:09:51 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[13-Sep-2025 12:10:53 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[13-Sep-2025 12:11:56 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[13-Sep-2025 12:13:00 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[13-Sep-2025 12:14:01 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[13-Sep-2025 12:15:06 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[13-Sep-2025 12:16:05 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[13-Sep-2025 12:17:11 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[13-Sep-2025 12:18:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php on line 9
+[13-Sep-2025 12:20:22 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php on line 9
+[13-Sep-2025 12:22:22 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[13-Sep-2025 12:23:20 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9
+[13-Sep-2025 12:27:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeSeeder.php on line 9
+[13-Sep-2025 12:28:00 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/StockInOutSeeder.php on line 9
+[13-Sep-2025 12:29:05 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/DesignationSeeder.php on line 9
+[13-Sep-2025 12:30:09 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CustomerSeeder.php on line 9
+[13-Sep-2025 12:31:12 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SupplierSeeder.php on line 9
+[13-Sep-2025 12:32:17 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/ProductSeeder.php on line 9
+[13-Sep-2025 12:34:17 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/EmployeeCostCategorySeeder.php on line 9
+[13-Sep-2025 12:35:14 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CategorySeeder.php on line 9
+[13-Sep-2025 12:36:13 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/SalarySeeder.php on line 9
+[13-Sep-2025 12:38:18 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/PaymentSeeder.php on line 9
+[13-Sep-2025 12:39:16 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostSeeder.php on line 9
+[13-Sep-2025 12:41:23 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/InvoiceSeeder.php on line 12
+[13-Sep-2025 12:42:21 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/UserSeeder.php on line 9
+[13-Sep-2025 12:44:27 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/BrandSeeder.php on line 9
+[13-Sep-2025 12:47:22 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/OrderSeeder.php on line 12
+[13-Sep-2025 12:48:13 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Database\Seeder" not found in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/database/seeders/CostCategorySeeder.php on line 9

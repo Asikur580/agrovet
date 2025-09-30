@@ -1,0 +1,24 @@
+[06-Aug-2025 05:18:35 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7
+[10-Aug-2025 15:47:26 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7
+[10-Aug-2025 15:55:25 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7
+[10-Sep-2025 03:53:03 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7
+[14-Sep-2025 11:20:02 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7
+[14-Sep-2025 11:37:04 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/app/Providers/AppServiceProvider.php on line 7

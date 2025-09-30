@@ -1,0 +1,24 @@
+[05-Aug-2025 22:52:13 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
+[06-Aug-2025 15:20:27 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
+[06-Aug-2025 15:26:41 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
+[09-Sep-2025 22:45:43 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
+[10-Sep-2025 11:28:34 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
+[10-Sep-2025 11:40:37 UTC] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Application" not found in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/gldqpoea/ra.s3cbd.com/backend/bootstrap/app.php on line 7
