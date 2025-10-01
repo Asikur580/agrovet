@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\EmployeeCostCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CostController;
@@ -9,13 +8,13 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SalaryController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
 
-use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
@@ -27,10 +26,17 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\CostCategoryController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\EmployeeCostCategoryController;
 
 Route::post('/login', [UserController::class, 'login'])->name('user.login'); // Public Route
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
 
     // logout
     Route::post('/logout', [UserController::class, 'logout'])->name('user.logout');
@@ -206,4 +212,3 @@ Route::get('/account-report', [ReportController::class, 'generateAccountsReport'
 Route::get('/product-profitability-report', [ReportController::class, 'generateProductProfitabilityReport']);
 Route::get('/supplier-report', [ReportController::class, 'generateSupplierReport']);
 Route::get('/customer-report/{customerId}', [ReportController::class, 'customerReport2']);
-
