@@ -42,7 +42,7 @@ class CustomerController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Customers retrieved successfully',
-            'data' => $customers,
+            'data' => count($customers),
         ]);
 
     } catch (Exception $e) {

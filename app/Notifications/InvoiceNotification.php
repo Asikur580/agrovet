@@ -5,17 +5,17 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class OrderNotification extends Notification
+class InvoiceNotification extends Notification
 {
     use Queueable;
 
     protected $message;
-    protected $orderId;
+    protected $invoiceId;
 
-    public function __construct($message, $orderId)
+    public function __construct($message, $invoiceId)
     {
         $this->message = $message;
-        $this->orderId = $orderId;
+        $this->invoiceId = $invoiceId;
     }
 
     public function via($notifiable)
@@ -26,8 +26,9 @@ class OrderNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'message'   => $this->message,
-            'order_id'  => $this->orderId,
+            'message'    => $this->message,
+            'invoice_id' => $this->invoiceId,
         ];
     }
 }
+

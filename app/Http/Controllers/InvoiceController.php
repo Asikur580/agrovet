@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Order;
-use App\Models\Relation;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Employee;
+use App\Models\Relation;
 use Illuminate\Http\Request;
 use App\Models\InvoiceProduct;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\InvoiceNotification;
 
 class InvoiceController extends Controller
 {
@@ -18,75 +19,74 @@ class InvoiceController extends Controller
      * Display a listing of the invoices.
      */
     public function index(Request $request)
-{
-    try {
-        $user = $request->user(); // logged-in user
+    {
+        try {
+            $user = $request->user(); // logged-in user
 
-        $invoicesQuery = Invoice::with(['customer', 'employee', 'products.product'])->latest();
+            $invoicesQuery = Invoice::with(['customer', 'employee', 'products.product'])->latest();
 
-        if ($user->employee->designation->slug == 'admin') {
-            // Admin সব invoice দেখবে
-            $invoices = $invoicesQuery->get();
-        } elseif ($user->employee->designation->slug == 'officer') {
-            // Officer শুধু নিজের invoice
-            $invoices = $invoicesQuery->where('employee_id', $user->employee->id)->get();
-        } elseif ($user->employee->designation->slug == 'manager') {
-            // Manager এর under থাকা officer এর invoices
-            $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-            $invoices = $invoicesQuery->whereIn('employee_id', $officerIds)->get();
-        } elseif ($user->employee->designation->slug == 'rsm') {
-            // RS এর under থাকা manager + তাদের officer এর invoices
-            $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-            $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
-            $allEmployeeIds = $managerIds->merge($officerIds);
-            $invoices = $invoicesQuery->whereIn('employee_id', $allEmployeeIds)->get();
-        } else {
-            // অন্য কেউ দেখবে না
-            $invoices = collect();
+            if ($user->employee->designation->slug == 'admin') {
+                // Admin সব invoice দেখবে
+                $invoices = $invoicesQuery->get();
+            } elseif ($user->employee->designation->slug == 'officer') {
+                // Officer শুধু নিজের invoice
+                $invoices = $invoicesQuery->where('employee_id', $user->employee->id)->get();
+            } elseif ($user->employee->designation->slug == 'manager') {
+                // Manager এর under থাকা officer এর invoices
+                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $invoices = $invoicesQuery->whereIn('employee_id', $officerIds)->get();
+            } elseif ($user->employee->designation->slug == 'rsm') {
+                // RS এর under থাকা manager + তাদের officer এর invoices
+                $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allEmployeeIds = $managerIds->merge($officerIds);
+                $invoices = $invoicesQuery->whereIn('employee_id', $allEmployeeIds)->get();
+            } else {
+                // অন্য কেউ দেখবে না
+                $invoices = collect();
+            }
+
+            // JSON response format
+            $invoices = $invoices->map(function ($invoice) {
+                return [
+                    'id' => $invoice->id,
+                    'customer_name' => $invoice->customer->customer_name ?? 'N/A',
+                    'employee_name' => $invoice->employee->name ?? 'N/A',
+                    'products' => $invoice->products->map(function ($item) {
+                        return [
+                            'product_name' => $item->product->name ?? 'N/A',
+                            'quantity' => $item->quantity ?? 'N/A',
+                            'unit_price' => $item->unit_price ?? 'N/A',
+                            'bonus_qty' => $item->bonus_qty ?? 'N/A',
+                            'price_type' => $item->price_type ?? 'N/A',
+                        ];
+                    }),
+                    'invoice_date' => $invoice->sale_date,
+                    'grand_total' => $invoice->grand_total,
+                    'created_at' => $invoice->created_at,
+                    'updated_at' => $invoice->updated_at,
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Invoices retrieved successfully',
+                'data' => count($invoices),
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve invoices: ' . $e->getMessage(),
+                'data' => null,
+            ]);
         }
-
-        // JSON response format
-        $invoices = $invoices->map(function ($invoice) {
-            return [
-                'id' => $invoice->id,
-                'customer_name' => $invoice->customer->customer_name ?? 'N/A',
-                'employee_name' => $invoice->employee->name ?? 'N/A',
-                'products' => $invoice->products->map(function ($item) {
-                    return [
-                        'product_name' => $item->product->name ?? 'N/A',
-                        'quantity' => $item->quantity ?? 'N/A',
-                        'unit_price' => $item->unit_price ?? 'N/A',
-                        'bonus_qty' => $item->bonus_qty ?? 'N/A',
-                        'price_type' => $item->price_type ?? 'N/A',
-                    ];
-                }),
-                'invoice_date' => $invoice->sale_date,
-                'grand_total' => $invoice->grand_total,
-                'created_at' => $invoice->created_at,
-                'updated_at' => $invoice->updated_at,
-            ];
-        });
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Invoices retrieved successfully',
-            'data' => $invoices,
-        ]);
-
-    } catch (Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Failed to retrieve invoices: ' . $e->getMessage(),
-            'data' => null,
-        ]);
     }
-}
 
-    
+
     public function salesByEmployee($id)
     {
         try {
-            $invoices = Invoice::with(['customer', 'employee', 'products.product'])->where('employee_id',$id)->get();
+            $invoices = Invoice::with(['customer', 'employee', 'products.product'])->where('employee_id', $id)->get();
 
             return response()->json([
                 'status' => true,
@@ -189,25 +189,25 @@ class InvoiceController extends Controller
                     'data' => null
                 ]);
             }
-           
+
             // Get latest invoice for the specific customer
             $latestInvoice = Invoice::where('cust_id', $validatedInvoice['cust_id'])
-            ->latest('id')
-            ->first();
+                ->latest('id')
+                ->first();
 
             $customerPrefix = 'RAINVO-'; // no trailing zero here
             $startingNumber = 1; // default starting number
             $paddingLength = 2;  // will create RAINVO-001, RAINVO-002, etc.
 
             if ($latestInvoice) {
-            // Extract numeric part safely
-            $latestNumber = (int) preg_replace('/[^0-9]/', '', $latestInvoice->invoiceId);
-            $startingNumber = $latestNumber + 1;
+                // Extract numeric part safely
+                $latestNumber = (int) preg_replace('/[^0-9]/', '', $latestInvoice->invoiceId);
+                $startingNumber = $latestNumber + 1;
             }
 
             // Format with zero padding
             $customInvoiceId = $customerPrefix . str_pad($startingNumber, $paddingLength, '0', STR_PAD_LEFT);
-    
+
             // Set the new invoice ID
             $validatedInvoice['invoiceId'] = $customInvoiceId;
 
@@ -252,10 +252,44 @@ class InvoiceController extends Controller
                 ]);
             }
 
-
-
             // Commit the transaction
             DB::commit();
+
+            // Invoice তৈরি করা employee কে notify করো
+            $employeeUser = $invoice->employee->user;
+          
+            if ($employeeUser) {
+                $employeeUser->notify(new InvoiceNotification(
+                    "Your invoice {$invoice->invoiceId} has been created successfully.",
+                    $invoice->id
+                ));
+            }
+
+            // Manager notify করো
+            $managerId = Relation::where('employee_id', $employee->id)->value('relation_id');
+            if ($managerId) {
+                $manager = Employee::find($managerId);
+                if ($manager && $manager->user) {
+                    $manager->user->notify(new InvoiceNotification(
+                        "Employee {$employee->name} created invoice {$invoice->invoiceId}.",
+                        $invoice->id
+                    ));
+                }
+            }
+
+            // Admin notify করো
+            $admins = Employee::whereHas('designation', function ($q) {
+                $q->where('slug', 'admin');
+            })->with('user')->get();
+
+            foreach ($admins as $admin) {
+                if ($admin->user) {
+                    $admin->user->notify(new InvoiceNotification(
+                        "A new invoice {$invoice->invoiceId} has been created by {$employee->name}.",
+                        $invoice->id
+                    ));
+                }
+            }
 
             return response()->json([
                 'status' => true,

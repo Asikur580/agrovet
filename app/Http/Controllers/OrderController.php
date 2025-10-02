@@ -172,27 +172,36 @@ class OrderController extends Controller
             DB::commit();
 
             // 1. Order তৈরি করা employee কে notify করো
-            $employeeUser = $employee->user; // Relation আছে ধরে নিচ্ছি
+            $employeeUser = $employee->user;
             if ($employeeUser) {
-                $employeeUser->notify(new OrderNotification("Your order has been created successfully."));
+                $employeeUser->notify(new OrderNotification(
+                    "Your order has been created successfully.",
+                    $order->id
+                ));
             }
 
-            // 2. Manager notify করো (relation টেবিল থেকে পাওয়া)
+            // 2. Manager notify করো
             if ($managerId) {
                 $manager = Employee::find($managerId);
                 if ($manager && $manager->user) {
-                    $manager->user->notify(new OrderNotification("Employee {$employee->name} created a new order."));
+                    $manager->user->notify(new OrderNotification(
+                        "Employee {$employee->name} created a new order.",
+                        $order->id
+                    ));
                 }
             }
 
-            // 3. Admin notify করো (designation->slug == admin)
+            // 3. Admin notify করো
             $admins = Employee::whereHas('designation', function ($q) {
                 $q->where('slug', 'admin');
             })->with('user')->get();
 
             foreach ($admins as $admin) {
                 if ($admin->user) {
-                    $admin->user->notify(new OrderNotification("A new order has been created by {$employee->name}."));
+                    $admin->user->notify(new OrderNotification(
+                        "A new order has been created by {$employee->name}.",
+                        $order->id
+                    ));
                 }
             }
             // Mail পাঠানো (DB safe হওয়ার পর)
