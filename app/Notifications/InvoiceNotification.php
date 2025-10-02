@@ -31,7 +31,7 @@ class InvoiceNotification extends Notification
             ->subject('New Invoice Notification')
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line($this->message)
-            ->action('View Invoice', url('/invoices/' . $this->invoiceId))
+            ->action('View Invoice', "https://ra.s3cbd.com/invoice/" . $this->invoiceId)
             ->line('Thank you for using our system!');
     }
 
