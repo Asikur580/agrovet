@@ -71,7 +71,7 @@ class InvoiceController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Invoices retrieved successfully',
-                'data' => count($invoices),
+                'data' => $invoices,
             ]);
         } catch (Exception $e) {
             return response()->json([
