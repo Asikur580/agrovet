@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\MailMessage;
 
 class InvoiceNotification extends Notification
 {
@@ -20,7 +21,18 @@ class InvoiceNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database'];
+        // এখানে mail যোগ করলাম
+        return ['database', 'mail'];
+    }
+
+    public function toMail($notifiable)
+    {
+        return (new MailMessage)
+            ->subject('New Invoice Notification')
+            ->greeting('Hello ' . $notifiable->name . ',')
+            ->line($this->message)
+            ->action('View Invoice', url('/invoices/' . $this->invoiceId))
+            ->line('Thank you for using our system!');
     }
 
     public function toArray($notifiable)
@@ -31,4 +43,3 @@ class InvoiceNotification extends Notification
         ];
     }
 }
-

@@ -23,7 +23,7 @@ class CustomerController extends Controller
         } elseif ($user->employee->designation->slug == 'officer') {
             // Officer শুধু নিজের customer
             $customers = $customersQuery->where('employee_id', $user->employee->id)->get();
-        //dd($customers);
+        
         } elseif ($user->employee->designation->slug == 'manager') {
             // Manager এর under থাকা officer এর customer
             $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
@@ -42,7 +42,7 @@ class CustomerController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Customers retrieved successfully',
-            'data' => $customers,
+            'data' => count($customers),
         ]);
 
     } catch (Exception $e) {
@@ -55,24 +55,24 @@ class CustomerController extends Controller
 }
 
     
-    public function customerByEmployee($id)
-    {
-        try {
-            $customers = Customer::where('employee_id',$id)->get();
+    // public function customerByEmployee($id)
+    // {
+    //     try {
+    //         $customers = Customer::where('employee_id',$id)->get();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'customers by employee retrieved successfully',
-                'data' => $customers,
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to retrieve customers',
-                'error' =>  $e->getMessage()
-            ]);
-        }
-    }
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'customers by employee retrieved successfully',
+    //             'data' => $customers,
+    //         ]);
+    //     } catch (Exception $e) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Failed to retrieve customers',
+    //             'error' =>  $e->getMessage()
+    //         ]);
+    //     }
+    // }
     
     public function store(Request $request)
     {

@@ -257,7 +257,7 @@ class InvoiceController extends Controller
 
             // Invoice তৈরি করা employee কে notify করো
             $employeeUser = $invoice->employee->user;
-          
+
             if ($employeeUser) {
                 $employeeUser->notify(new InvoiceNotification(
                     "Your invoice {$invoice->invoiceId} has been created successfully.",
@@ -290,6 +290,7 @@ class InvoiceController extends Controller
                     ));
                 }
             }
+           
 
             return response()->json([
                 'status' => true,
