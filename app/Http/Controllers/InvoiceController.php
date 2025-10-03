@@ -10,8 +10,10 @@ use App\Models\Employee;
 use App\Models\Relation;
 use Illuminate\Http\Request;
 use App\Models\InvoiceProduct;
+use App\Mail\InvoiceCreatedMail;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\InvoiceNotification;
+use Illuminate\Support\Facades\Mail;
 
 class InvoiceController extends Controller
 {
@@ -265,8 +267,10 @@ class InvoiceController extends Controller
                 ));
             }
 
-            // Manager notify করো
+            // Manager notify
             $managerId = Relation::where('employee_id', $employee->id)->value('relation_id');
+            $manager = null;
+
             if ($managerId) {
                 $manager = Employee::find($managerId);
                 if ($manager && $manager->user) {
@@ -290,7 +294,14 @@ class InvoiceController extends Controller
                     ));
                 }
             }
-           
+
+            // Manager email
+            $managerEmail = optional(optional($manager)->user)->email;
+
+            if ($managerEmail) {
+                Mail::to($managerEmail)->send(new InvoiceCreatedMail($invoice));
+            }
+
 
             return response()->json([
                 'status' => true,

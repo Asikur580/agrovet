@@ -53,26 +53,25 @@ class CustomerController extends Controller
         ]);
     }
 }
-
     
-    // public function customerByEmployee($id)
-    // {
-    //     try {
-    //         $customers = Customer::where('employee_id',$id)->get();
+    public function customerByEmployee($id)
+    {
+        try {
+            $customers = Customer::where('employee_id',$id)->get();
 
-    //         return response()->json([
-    //             'status' => true,
-    //             'message' => 'customers by employee retrieved successfully',
-    //             'data' => $customers,
-    //         ]);
-    //     } catch (Exception $e) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Failed to retrieve customers',
-    //             'error' =>  $e->getMessage()
-    //         ]);
-    //     }
-    // }
+            return response()->json([
+                'status' => true,
+                'message' => 'customers by employee retrieved successfully',
+                'data' => $customers,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve customers',
+                'error' =>  $e->getMessage()
+            ]);
+        }
+    }
     
     public function store(Request $request)
     {

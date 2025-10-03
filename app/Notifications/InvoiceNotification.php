@@ -20,21 +20,10 @@ class InvoiceNotification extends Notification
     }
 
     public function via($notifiable)
-    {
-        // এখানে mail যোগ করলাম
-        return ['database', 'mail'];
+    {       
+        return ['database'];
     }
-
-    public function toMail($notifiable)
-    {
-        return (new MailMessage)
-            ->subject('New Invoice Notification')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line($this->message)
-            ->action('View Invoice', "https://ra.s3cbd.com/invoice/" . $this->invoiceId)
-            ->line('Thank you for using our system!');
-    }
-
+   
     public function toArray($notifiable)
     {
         return [
