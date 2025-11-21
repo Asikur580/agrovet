@@ -212,3 +212,10 @@ Route::get('/account-report', [ReportController::class, 'generateAccountsReport'
 Route::get('/product-profitability-report', [ReportController::class, 'generateProductProfitabilityReport']);
 Route::get('/supplier-report', [ReportController::class, 'generateSupplierReport']);
 Route::get('/customer-report/{customerId}', [ReportController::class, 'customerReport2']);
+
+
+// GET /api/due-invoices?from_date=2025-01-01&to_date=2025-01-31
+// GET /api/due-invoices?days=90
+// GET /api/orders?customer_id=5&employee_id=12
+// GET /api/invoices?customer_id=10&employee_id=7
+

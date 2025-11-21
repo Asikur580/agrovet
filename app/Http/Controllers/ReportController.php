@@ -98,7 +98,7 @@ class ReportController extends Controller
     {
 
         // Fetch the employee details along with their own invoices
-         $employee = Employee::with('invoices.customer', 'designation')->findOrFail($id);
+        $employee = Employee::with('invoices.customer', 'designation')->findOrFail($id);
 
         // Initialize an empty collection for all related invoices
         $allInvoices = collect([]);
@@ -269,49 +269,66 @@ class ReportController extends Controller
         ]);
     }
 
-    public function dueInvoice()
+    public function dueInvoice(Request $request)
     {
-        // Current date
         $currentDate = Carbon::now();
 
-        // Fetch invoices with due amount greater than 0
-        $dueInvoices = Invoice::with('employee:id,name', 'customer:id,customer_name')->where('due', '>', 0) // where due is greater than 0
-            ->get()
-            ->filter(function ($invoice) use ($currentDate) {
-                // Parse the sale_date
+        // Get filters
+        $daysFilter = $request->days; // 30,45,60,90
+        $fromDate = $request->from_date;
+        $toDate = $request->to_date;
+
+        // Base query: only due invoices
+        $invoicesQuery = Invoice::with('employee:id,name', 'customer:id,customer_name')
+            ->where('due', '>', 0);
+
+        // -------------------------
+        // 🔥 FILTER 1: PREDEFINED DAYS (30,45,60,90)
+        // -------------------------
+        if ($daysFilter && in_array($daysFilter, [30, 45, 60, 90])) {
+
+            $startDate = Carbon::now()->subDays($daysFilter)->startOfDay();
+            $endDate = Carbon::now()->endOfDay();
+
+            $invoicesQuery->whereBetween('sale_date', [$startDate, $endDate]);
+        }
+
+
+        // -------------------------
+        // 🔥 FILTER 2: CUSTOM DATE RANGE
+        // -------------------------
+        if ($fromDate && $toDate) {
+            $invoicesQuery->whereBetween('sale_date', [
+                Carbon::parse($fromDate),
+                Carbon::parse($toDate)
+            ]);
+        }
+
+        // Fetch
+        $invoices = $invoicesQuery->get();
+
+        if ($invoices->isNotEmpty()) {
+
+            // attach days_since_sale
+            $invoicesWithDays = $invoices->map(function ($invoice) use ($currentDate) {
                 $saleDate = Carbon::parse($invoice->sale_date);
-
-                // Calculate the difference in days
-                $daysSinceSale = $saleDate->diffInDays($currentDate);
-
-                // Return only invoices where the sale_date is 30 days or more ago
-                return $daysSinceSale >= 30;
-            });
-
-        // If any overdue invoices are found
-        if ($dueInvoices->isNotEmpty()) {
-            // Add the 'days_since_sale' to each invoice data
-            $dueInvoicesWithDays = $dueInvoices->map(function ($invoice) use ($currentDate) {
-                $saleDate = Carbon::parse($invoice->sale_date);
-                $daysSinceSale = (int) $saleDate->diffInDays($currentDate);
-
-                // Add 'days_since_sale' to the invoice data
-                $invoice->days_since_sale = $daysSinceSale;
+                $invoice->days_since_sale = $saleDate->diffInDays($currentDate);
                 return $invoice;
             });
 
             return response()->json([
                 'status' => true,
-                'message' => 'Some invoices are overdue for 30 days or more.',
-                'data' => $dueInvoicesWithDays
+                'message' => 'Due invoices retrieved successfully.',
+                'data' => $invoicesWithDays
             ]);
         }
 
         return response()->json([
             'status' => false,
-            'message' => 'No overdue invoices for 30 days or more.',
+            'message' => 'No due invoices found for the selected filter.',
         ]);
     }
+
 
     public function dashboardReport()
     {
