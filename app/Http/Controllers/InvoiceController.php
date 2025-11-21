@@ -23,32 +23,53 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         try {
-            $user = $request->user(); // logged-in user
+            $user = $request->user();
+
+            $customerId = $request->customer_id;      // Customer Filter
+            $filterEmployeeId = $request->employee_id; // Employee Filter
 
             $invoicesQuery = Invoice::with(['customer', 'employee', 'products.product'])->latest();
 
+            // Role based filtering
             if ($user->employee->designation->slug == 'admin') {
-                // Admin সব invoice দেখবে
-                $invoices = $invoicesQuery->get();
+
+                // Admin সব দেখতে পারে — no restriction
+
             } elseif ($user->employee->designation->slug == 'officer') {
-                // Officer শুধু নিজের invoice
-                $invoices = $invoicesQuery->where('employee_id', $user->employee->id)->get();
+
+                $invoicesQuery->where('employee_id', $user->employee->id);
             } elseif ($user->employee->designation->slug == 'manager') {
-                // Manager এর under থাকা officer এর invoices
+
                 $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-                $invoices = $invoicesQuery->whereIn('employee_id', $officerIds)->get();
+                $invoicesQuery->whereIn('employee_id', $officerIds);
             } elseif ($user->employee->designation->slug == 'rsm') {
-                // RS এর under থাকা manager + তাদের officer এর invoices
+
                 $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
                 $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
                 $allEmployeeIds = $managerIds->merge($officerIds);
-                $invoices = $invoicesQuery->whereIn('employee_id', $allEmployeeIds)->get();
+
+                $invoicesQuery->whereIn('employee_id', $allEmployeeIds);
             } else {
-                // অন্য কেউ দেখবে না
-                $invoices = collect();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No invoices available.',
+                    'data' => [],
+                ]);
             }
 
-            // JSON response format
+            // 🔥 Apply Customer Filter
+            if ($customerId) {
+                $invoicesQuery->where('cust_id', $customerId);
+            }
+
+            // 🔥 Apply Employee Filter (Allowed only within permission)
+            if ($filterEmployeeId) {
+                $invoicesQuery->where('employee_id', $filterEmployeeId);
+            }
+
+            $invoices = $invoicesQuery->get();
+
+            // Format
             $invoices = $invoices->map(function ($invoice) {
                 return [
                     'id' => $invoice->id,
@@ -85,6 +106,7 @@ class InvoiceController extends Controller
             ]);
         }
     }
+
 
 
     public function salesByEmployee($id)

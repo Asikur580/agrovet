@@ -27,38 +27,50 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         try {
-            $user = $request->user(); // logged-in user
+            $user = $request->user();
 
-            $ordersQuery = Order::with(['customer', 'employee', 'orderProducts.product'])->latest();;
+            $customerId = $request->customer_id; // Filter
+            $employeeId = $request->employee_id; // Filter
 
+            $ordersQuery = Order::with(['customer', 'employee', 'orderProducts.product'])->latest();
+
+            // Role based filtering
             if ($user->employee->designation->slug == 'admin') {
-                // Admin sob order dekhe
-                $orders = $ordersQuery->get();
+                // Admin all
             } elseif ($user->employee->designation->slug == 'officer') {
-                // Officer tar nijer order
-
-                $orders = $ordersQuery->where('employee_id', $user->employee->id)->get();
+                $ordersQuery->where('employee_id', $user->employee->id);
             } elseif ($user->employee->designation->slug == 'manager') {
-                // Manager er under e thaka officer der order
-                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id'); // assume manager_id field ache
-                $orders = $ordersQuery->whereIn('employee_id', $officerIds)->get();
+
+                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $ordersQuery->whereIn('employee_id', $officerIds);
             } elseif ($user->employee->designation->slug == 'rsm') {
-                // RS এর under thaka manager এর employee_id
+
                 $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-
-                // Manager এর under officer এর employee_id
                 $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
-
-                // সব employee id = manager + officer
                 $allEmployeeIds = $managerIds->merge($officerIds);
 
-                // orders filter
-                $orders = $ordersQuery->whereIn('employee_id', $allEmployeeIds)->get();
+                $ordersQuery->whereIn('employee_id', $allEmployeeIds);
             } else {
-                // Default: kichu na dekhao
-                $orders = collect();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No orders available.',
+                    'data' => []
+                ]);
             }
 
+            // 🔥 Apply customer filter
+            if ($customerId) {
+                $ordersQuery->where('cust_id', $customerId);
+            }
+
+            // 🔥 Apply employee filter
+            if ($employeeId) {
+                $ordersQuery->where('employee_id', $employeeId);
+            }
+
+            $orders = $ordersQuery->get();
+
+            // Format Data
             $orders = $orders->map(function ($order) {
                 return [
                     'id' => $order->id,
@@ -66,13 +78,13 @@ class OrderController extends Controller
                     'employee_name' => $order->employee->name ?? 'N/A',
                     'products' => $order->orderProducts->map(function ($orderProduct) {
                         return [
-                            'product_name' => $orderProduct->product->name ?? 'N/A',
-                            'pack_size' => $orderProduct->product->pack_size ?? 'N/A',
-                            'quantity' => $orderProduct->quantity ?? 'N/A',
-                            'unit_price' => $orderProduct->unit_price ?? 'N/A',
-                            'bonus_qty' => $orderProduct->bonus_qty ?? 'N/A',
-                            'due_quantity' => $orderProduct->due_quantity ?? 'N/A',
-                            'price_type' => $orderProduct->price_type ?? 'N/A',
+                            'product_name' => $orderProduct->product->name,
+                            'pack_size' => $orderProduct->product->pack_size,
+                            'quantity' => $orderProduct->quantity,
+                            'unit_price' => $orderProduct->unit_price,
+                            'bonus_qty' => $orderProduct->bonus_qty,
+                            'due_quantity' => $orderProduct->due_quantity,
+                            'price_type' => $orderProduct->price_type,
                         ];
                     }),
                     'order_date' => $order->order_date,
@@ -96,6 +108,7 @@ class OrderController extends Controller
             ]);
         }
     }
+
 
 
     /**
@@ -153,7 +166,7 @@ class OrderController extends Controller
                 'cust_id'     => $validated['cust_id'],
                 'employee_id' => $employee->id,
                 'discount'    => $validated['discount'] ?? 0,
-               'order_date' => $validated['order_date'],
+                'order_date' => $validated['order_date'],
                 'order_type'  => $validated['order_type'],
             ]);
 
@@ -310,8 +323,6 @@ class OrderController extends Controller
                     'data' => null
                 ]);
             }
-            
-            
 
             // Update order info
             $order->update([
