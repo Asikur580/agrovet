@@ -285,7 +285,7 @@ class ReportController extends Controller
         // -------------------------
         // 🔥 FILTER 1: PREDEFINED DAYS (30,45,60,90)
         // -------------------------
-        if ($daysFilter && in_array($daysFilter, [30, 45, 60, 90])) {
+        if ($daysFilter) {
 
             $startDate = Carbon::now()->subDays($daysFilter)->startOfDay();
             $endDate = Carbon::now()->endOfDay();
