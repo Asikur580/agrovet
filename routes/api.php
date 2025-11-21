@@ -130,6 +130,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('employeeReport/{id}', [ReportController::class, 'employeeReport'])->name('report.employee');
     Route::get('supplierReport/{id}', [ReportController::class, 'supplierReport'])->name('report.supplier');
     Route::get('dueInvoice', [ReportController::class, 'dueInvoice'])->name('report.dueInvoice');
+    Route::get('cashCreditSale', [ReportController::class, 'cashCreditSale'])->name('report.cashCreditSale');
 
     // cost category 
     Route::get('costCategories', [CostCategoryController::class, 'index'])->name('costCategory.index');

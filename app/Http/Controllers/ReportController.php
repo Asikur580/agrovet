@@ -21,6 +21,59 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
 
+    public function cashCreditSale(Request $request)
+    {
+        try {
+            $days = $request->days;  // 30,45,60,90
+            $fromDate = $request->from_date;
+            $toDate = $request->to_date;
+
+            // Base Query
+            $query = Invoice::select('sale_type', 'grand_total', 'sale_date');
+
+            // -------------------------
+            // 🔥 DATE FILTER (Last X Days)
+            // -------------------------
+            if ($days) {
+                $startDate = Carbon::now()->subDays($days)->startOfDay();
+                $endDate = Carbon::now()->endOfDay();
+                $query->whereBetween('sale_date', [$startDate, $endDate]);
+            }
+
+            // -------------------------
+            // 🔥 CUSTOM DATE FILTER
+            // -------------------------
+            if ($fromDate && $toDate) {
+                $query->whereBetween('sale_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            }
+
+            $invoices = $query->get();
+
+            // -------------------------
+            // 🔥 CALCULATE TOTALS
+            // -------------------------
+            $cashTotal = $invoices->where('sale_type', 'cash')->sum('grand_total');
+            $creditTotal = $invoices->where('sale_type', 'credit')->sum('grand_total');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Cash credit sale report fetched successfully',
+                'data' => [
+                    'cash_total' => $cashTotal,
+                    'credit_total' => $creditTotal,
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
     public function productReport($id)
     {
         $productDetails = Product::find($id);
@@ -277,6 +330,7 @@ class ReportController extends Controller
         $daysFilter = $request->days; // 30,45,60,90
         $fromDate = $request->from_date;
         $toDate = $request->to_date;
+        $customerId = $request->customer_id; // ⭐ NEW
 
         // Base query: only due invoices
         $invoicesQuery = Invoice::with('employee:id,name', 'customer:id,customer_name')
@@ -286,22 +340,27 @@ class ReportController extends Controller
         // 🔥 FILTER 1: PREDEFINED DAYS (30,45,60,90)
         // -------------------------
         if ($daysFilter) {
-
             $startDate = Carbon::now()->subDays($daysFilter)->startOfDay();
             $endDate = Carbon::now()->endOfDay();
 
             $invoicesQuery->whereBetween('sale_date', [$startDate, $endDate]);
         }
 
-
         // -------------------------
         // 🔥 FILTER 2: CUSTOM DATE RANGE
         // -------------------------
         if ($fromDate && $toDate) {
             $invoicesQuery->whereBetween('sale_date', [
-                Carbon::parse($fromDate),
-                Carbon::parse($toDate)
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
             ]);
+        }
+
+        // -------------------------
+        // 🔥 FILTER 3: CUSTOMER FILTER (NEW)
+        // -------------------------
+        if ($customerId) {
+            $invoicesQuery->where('cust_id', $customerId);
         }
 
         // Fetch
@@ -328,7 +387,6 @@ class ReportController extends Controller
             'message' => 'No due invoices found for the selected filter.',
         ]);
     }
-
 
     public function dashboardReport()
     {
@@ -511,9 +569,6 @@ class ReportController extends Controller
             ]);
         }
     }
-
-
-
 
     public function generateSalesReport(Request $request)
     {
@@ -707,8 +762,6 @@ class ReportController extends Controller
             'salary_due_paid' => $salaryDuePaid,
         ]);
     }
-
-
 
     public function generateExpenseReport(Request $request)
     {
@@ -919,7 +972,6 @@ class ReportController extends Controller
     }
 
 
-
     public function customerReport2($customerId)
     {
         // Get the customer details
@@ -950,8 +1002,6 @@ class ReportController extends Controller
             ]
         ]);
     }
-
-
 
 
     public function report($id) {}
