@@ -10,6 +10,7 @@ class Order extends Model
     use HasFactory;
     protected $fillable = ['cust_id', 'employee_id','discount','order_date','order_type','status'];
 
+
     /**
      * Relationship: An Order belongs to a Customer.
      */

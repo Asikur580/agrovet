@@ -67,9 +67,11 @@ class OrderController extends Controller
                     'products' => $order->orderProducts->map(function ($orderProduct) {
                         return [
                             'product_name' => $orderProduct->product->name ?? 'N/A',
+                            'pack_size' => $orderProduct->product->pack_size ?? 'N/A',
                             'quantity' => $orderProduct->quantity ?? 'N/A',
                             'unit_price' => $orderProduct->unit_price ?? 'N/A',
                             'bonus_qty' => $orderProduct->bonus_qty ?? 'N/A',
+                            'due_quantity' => $orderProduct->due_quantity ?? 'N/A',
                             'price_type' => $orderProduct->price_type ?? 'N/A',
                         ];
                     }),
@@ -104,7 +106,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'cust_id' => 'required|exists:customers,id',
             'discount' => 'nullable|numeric',
-            'order_date' => 'required|date',
+            'order_date' => 'required|string',
             'order_type' => 'required|in:cash,credit',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
@@ -151,7 +153,7 @@ class OrderController extends Controller
                 'cust_id'     => $validated['cust_id'],
                 'employee_id' => $employee->id,
                 'discount'    => $validated['discount'] ?? 0,
-                'order_date'  => $validated['order_date'],
+               'order_date' => $validated['order_date'],
                 'order_type'  => $validated['order_type'],
             ]);
 
@@ -308,6 +310,8 @@ class OrderController extends Controller
                     'data' => null
                 ]);
             }
+            
+            
 
             // Update order info
             $order->update([

@@ -57,9 +57,11 @@ class InvoiceController extends Controller
                     'products' => $invoice->products->map(function ($item) {
                         return [
                             'product_name' => $item->product->name ?? 'N/A',
+                            'pack_size' => $item->product->pack_size ?? 'N/A',
                             'quantity' => $item->quantity ?? 'N/A',
                             'unit_price' => $item->unit_price ?? 'N/A',
                             'bonus_qty' => $item->bonus_qty ?? 'N/A',
+                            'due_quantity' => $item->due_quantity ?? 'N/A',
                             'price_type' => $item->price_type ?? 'N/A',
                         ];
                     }),
@@ -161,6 +163,7 @@ class InvoiceController extends Controller
                 'products.*.bonus_qty' => 'nullable|numeric',
                 'products.*.price_type' => 'required|in:tp,flat',
             ]);
+
 
             if ($validatedInvoice['paid'] > $validatedInvoice['grand_total']) {
                 return response()->json([
@@ -347,6 +350,7 @@ class InvoiceController extends Controller
                 'products.*.bonus_qty' => 'nullable|numeric',
                 'products.*.price_type' => 'required|in:tp,flat',
             ]);
+
 
             if ($validatedInvoice['paid'] > $validatedInvoice['grand_total']) {
                 return response()->json([

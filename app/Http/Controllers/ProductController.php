@@ -179,6 +179,7 @@ class ProductController extends Controller
 
     public function stockIn(Request $request)
     {
+       
         DB::beginTransaction();
 
         try {
@@ -188,6 +189,7 @@ class ProductController extends Controller
                 'buy_price' => 'required|string',
                 'supplier_id' => 'required|exists:suppliers,id',
                 'in_out_date' => 'required|date',
+                'expire_date' => 'nullable|date',
             ]);
 
             // Create the stock-in record
@@ -203,6 +205,9 @@ class ProductController extends Controller
             // Update the product's quantity
             $product = Product::find($request->product_id);
             $product->quantity += $request->quantity; // Increase the product quantity
+            if ($request->filled('expire_date')) {
+                $product->expire_date = $request->expire_date;
+                }
             $product->save(); // Save the changes to the database
 
             DB::commit();
