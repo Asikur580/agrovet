@@ -123,6 +123,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('invoiceStore/{orderId?}', [InvoiceController::class, 'store'])->name('invoice.store');
     Route::post('invoiceUpdate/{id}', [InvoiceController::class, 'update'])->name('invoice.update');
     Route::post('invoiceDelete/{id}', [InvoiceController::class, 'destroy'])->name('invoice.destroy');
+    Route::post('invoice/{id}/mark-printed', [InvoiceController::class, 'markPrinted'])->name('invoice.printed');
+
 
     // report
     Route::get('productReport/{id}', [ReportController::class, 'productReport'])->name('report.product');

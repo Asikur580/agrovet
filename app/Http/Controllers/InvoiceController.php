@@ -88,6 +88,8 @@ class InvoiceController extends Controller
                     }),
                     'invoice_date' => $invoice->sale_date,
                     'grand_total' => $invoice->grand_total,
+                    'is_printed' => $invoice->is_printed,
+                    'printed_at' => $invoice->printed_at,
                     'created_at' => $invoice->created_at,
                     'updated_at' => $invoice->updated_at,
                 ];
@@ -501,5 +503,19 @@ class InvoiceController extends Controller
                 'data' => null,
             ]);
         }
+    }
+
+    public function markPrinted($id)
+    {
+        Invoice::where('id', $id)->update([
+            'is_printed' => true,
+            'printed_at' => now()
+        ]);
+
+          return response()->json([
+                'status' => true,
+                'message' => 'Invoice marked as printed',
+                'data' => null,
+            ]);     
     }
 }
