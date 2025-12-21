@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Throwable;
 use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ class EmployeeController extends Controller
 
 
             return response()->json(['status' => true, 'message' => 'Employee created successfully', 'data' => $employee]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
 
             return response()->json(['status' => false, 'message' => 'Something is worng', 'error' => $e->getMessage()]);
         }
