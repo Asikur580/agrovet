@@ -37,7 +37,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
-
     // logout
     Route::post('/logout', [UserController::class, 'logout'])->name('user.logout');
 
@@ -129,6 +128,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // report
     Route::get('productReport/{id}', [ReportController::class, 'productReport'])->name('report.product');
     Route::get('customerReport/{id}', [ReportController::class, 'customerReport'])->name('report.customer');
+    Route::get('customerWiseSalesReport', [ReportController::class, 'customerWiseSalesReport'])->name('report.customerWiseSales');
+
     Route::get('employeeReport/{id}', [ReportController::class, 'employeeReport'])->name('report.employee');
     Route::get('supplierReport/{id}', [ReportController::class, 'supplierReport'])->name('report.supplier');
     Route::get('dueInvoice', [ReportController::class, 'dueInvoice'])->name('report.dueInvoice');

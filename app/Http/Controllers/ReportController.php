@@ -147,6 +147,69 @@ class ReportController extends Controller
         ]);
     }
 
+    public function customerWiseSalesReport(Request $request)
+    {
+        try {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = Customer::query();
+
+            // If date filter is applied, only fetch customers who have invoices in that range
+            if ($fromDate && $toDate) {
+                $query->whereHas('invoices', function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                });
+            }
+
+            $customers = $query->withSum(['invoices as total_purchases' => function ($q) use ($fromDate, $toDate) {
+                if ($fromDate && $toDate) {
+                    $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                }
+            }], 'grand_total')
+                ->withSum(['invoices as total_due' => function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate && $toDate) {
+                        $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                    }
+                }], 'due')
+                ->withCount(['invoices as total_invoices' => function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate && $toDate) {
+                        $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                    }
+                }])
+                ->withSum(['payments as total_payments' => function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate && $toDate) {
+                        $q->whereBetween('payment_date', [$fromDate, $toDate]);
+                    }
+                }], 'amount')
+                ->get();
+
+            $report = $customers->map(function ($customer) {
+                return [
+                    'customer_id' => $customer->id,
+                    'customer_name' => $customer->customer_name,
+                    'phone' => $customer->phone,
+                    'total_invoices' => $customer->total_invoices ?? 0,
+                    'total_purchases' => $customer->total_purchases ?? 0,
+                    'total_payments' => $customer->total_payments ?? 0,
+                    'total_due' => $customer->total_due ?? 0,
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Customer wise sales report retrieved successfully',
+                'data' => $report
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function employeeReport($id)
     {
 
