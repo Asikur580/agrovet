@@ -10,6 +10,7 @@ use App\Models\Salary;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Relation;
@@ -87,7 +88,7 @@ class ReportController extends Controller
                 'customers.customer_name as customer_name'
             )
             ->where('invoice_products.product_id', $id)
-            ->orderBy('invoices.sale_date', 'asc') // বিক্রয়ের তারিখ অনুযায়ী সাজানো
+            ->orderBy('invoices.sale_date', 'asc') 
             ->get();
 
         return response()->json([
@@ -205,6 +206,81 @@ class ReportController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function productWiseSalesReport(Request $request)
+    {
+        try {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = Product::select(
+                'products.id',
+                'products.name as product_name',
+                DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
+                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
+                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_amount')
+            )
+                ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')
+                ->leftJoin('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                ->groupBy('products.id', 'products.name');
+
+            if ($fromDate && $toDate) {
+                $query->whereBetween('invoices.sale_date', [$fromDate, $toDate]);
+            }
+
+            $report = $query->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Product wise sales report retrieved successfully',
+                'data' => $report
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve product wise sales report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function categoryWiseSalesReport(Request $request)
+    {
+        try {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
+            $query = Category::select(
+                'categories.id',
+                'categories.name as category_name',
+                DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
+                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
+                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_amount')
+            )
+                ->leftJoin('products', 'categories.id', '=', 'products.cat_id')
+                ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')
+                ->leftJoin('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                ->groupBy('categories.id', 'categories.name');
+
+            if ($fromDate && $toDate) {
+                $query->whereBetween('invoices.sale_date', [$fromDate, $toDate]);
+            }
+
+            $report = $query->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Category wise sales report retrieved successfully',
+                'data' => $report
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve category wise sales report',
                 'error' => $e->getMessage()
             ], 500);
         }

@@ -129,6 +129,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('productReport/{id}', [ReportController::class, 'productReport'])->name('report.product');
     Route::get('customerReport/{id}', [ReportController::class, 'customerReport'])->name('report.customer');
     Route::get('customerWiseSalesReport', [ReportController::class, 'customerWiseSalesReport'])->name('report.customerWiseSales');
+    Route::get('productWiseSalesReport', [ReportController::class, 'productWiseSalesReport'])->name('report.productWiseSales');
+    Route::get('categoryWiseSalesReport', [ReportController::class, 'categoryWiseSalesReport'])->name('report.categoryWiseSales');
 
     Route::get('employeeReport/{id}', [ReportController::class, 'employeeReport'])->name('report.employee');
     Route::get('supplierReport/{id}', [ReportController::class, 'supplierReport'])->name('report.supplier');
