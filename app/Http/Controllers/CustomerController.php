@@ -112,6 +112,27 @@ class CustomerController extends Controller
             }
 
             // Create the customer
+            $latestCustomer = Customer::latest('id')->first();
+            $customerPrefix = 'RA18/';
+            $startingNumber = 1;
+
+            if ($latestCustomer && $latestCustomer->customer_id) {
+                // Extract numeric part safely
+                $latestNumber = (int) preg_replace('/[^0-9]/', '', $latestCustomer->customer_id);
+                // The prefix RA18/ includes 18, so we need to be careful with preg_replace
+                // Better approach: extract after the slash
+                if (strpos($latestCustomer->customer_id, '/') !== false) {
+                    $parts = explode('/', $latestCustomer->customer_id);
+                    $latestNumber = (int) end($parts);
+                }
+                $startingNumber = $latestNumber + 1;
+            }
+
+            // Format with zero padding (4 digits as requested)
+            $generatedCustomerId = $customerPrefix . str_pad($startingNumber, 4, '0', STR_PAD_LEFT);
+            $validatedData['customer_id'] = $generatedCustomerId;
+
+            // Create the customer
             $customer = Customer::create($validatedData);
 
             return response()->json([

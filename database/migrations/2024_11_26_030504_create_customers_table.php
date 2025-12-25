@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->onDelete('restrict');
             $table->string('customer_name');
+            $table->string('customer_id')->unique();
             $table->string('proprietor_name');
             $table->string('phone');
             $table->string('address');

@@ -75,6 +75,7 @@ class InvoiceController extends Controller
                     'id' => $invoice->id,
                     'customer_name' => $invoice->customer->customer_name ?? 'N/A',
                     'employee_name' => $invoice->employee->name ?? 'N/A',
+                    'employee_id' => $invoice->employee->employee_id ?? 'N/A',
                     'products' => $invoice->products->map(function ($item) {
                         return [
                             'product_name' => $item->product->name ?? 'N/A',

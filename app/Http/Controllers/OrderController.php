@@ -76,6 +76,7 @@ class OrderController extends Controller
                     'id' => $order->id,
                     'customer_name' => $order->customer->customer_name ?? 'N/A',
                     'employee_name' => $order->employee->name ?? 'N/A',
+                    'employee_id' => $order->employee->employee_id ?? 'N/A',
                     'products' => $order->orderProducts->map(function ($orderProduct) {
                         return [
                             'product_name' => $orderProduct->product->name,
