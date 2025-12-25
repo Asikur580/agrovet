@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/employeeStore', [EmployeeController::class, 'store'])->name('employee.store');
     Route::post('/employeeUpdate/{id}', [EmployeeController::class, 'update'])->name('employee.update');
     Route::post('/employeeDelete/{id}', [EmployeeController::class, 'destroy'])->name('employee.destroy');
+    Route::get('/employees/credit-report', [EmployeeController::class, 'creditReport'])->name('employee.creditReport');
 
     // User Routes
     Route::get('/users', [UserController::class, 'index'])->name('user.index');

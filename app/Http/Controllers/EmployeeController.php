@@ -166,4 +166,50 @@ class EmployeeController extends Controller
             ]);
         }
     }
+
+    public function creditReport()
+    {
+        try {
+            $employees = Employee::where('status', 'active')->get();
+
+            $report = $employees->map(function ($employee) {
+                // Total due from invoices
+                $creditUseFromInvoices = DB::table('invoices')
+                    ->where('employee_id', $employee->id)
+                    ->where('sale_type', 'credit')
+                    ->sum('due');
+
+                // Total amount from pending orders (not yet invoiced)
+                $creditUseFromOrders = DB::table('orders')
+                    ->where('employee_id', $employee->id)
+                    ->where('orders.order_type', 'credit')
+                    ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+                    ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+
+                $creditUse = $creditUseFromInvoices + $creditUseFromOrders;
+                $creditLimit = $employee->credit_limit ?? 0;
+                $creditDue = $creditLimit - $creditUse;
+
+                return [
+                    'id' => $employee->id,
+                    'employee_name' => $employee->name,
+                    'credit_limit' => $creditLimit,
+                    'credit_use' => $creditUse,
+                    'credit_due' => $creditDue,
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Employee credit report retrieved successfully',
+                'data' => $report,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve credit report',
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }
