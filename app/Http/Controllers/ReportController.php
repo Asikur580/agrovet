@@ -221,7 +221,7 @@ class ReportController extends Controller
                 'products.id',
                 'products.name as product_name',
                 DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
-                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
+                DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity'),
                 DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_amount')
             )
                 ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')
@@ -686,11 +686,12 @@ class ReportController extends Controller
             $lowStockThreshold = $request->input('threshold', 10);
 
             $lowStockProducts = Product::where('quantity', '<=', $lowStockThreshold)
-                ->select('id', 'name', 'quantity')
+                ->select('id', 'name','pack_size', 'quantity')
                 ->get()
                 ->map(function ($product) {
                     return [
                         'product_name' => $product->name,
+                        'pack_size' => $product->pack_size,
                         'current_stock' => $product->quantity,
                     ];
                 });

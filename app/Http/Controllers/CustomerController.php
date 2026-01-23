@@ -111,26 +111,18 @@ class CustomerController extends Controller
                 $validatedData['image'] = $imagePath;
             }
 
-            // Create the customer
-            $latestCustomer = Customer::latest('id')->first();
-            $customerPrefix = 'RA18/';
-            $startingNumber = 1;
+             $latestCustomer = Customer::orderBy('id', 'desc')->first();
 
-            if ($latestCustomer && $latestCustomer->customer_id) {
-                // Extract numeric part safely
-                $latestNumber = (int) preg_replace('/[^0-9]/', '', $latestCustomer->customer_id);
-                // The prefix RA18/ includes 18, so we need to be careful with preg_replace
-                // Better approach: extract after the slash
-                if (strpos($latestCustomer->customer_id, '/') !== false) {
-                    $parts = explode('/', $latestCustomer->customer_id);
-                    $latestNumber = (int) end($parts);
-                }
-                $startingNumber = $latestNumber + 1;
-            }
+             $prefix = 'RA18/000';
+             $number = 1;
 
-            // Format with zero padding (4 digits as requested)
-            $generatedCustomerId = $customerPrefix . str_pad($startingNumber, 4, '0', STR_PAD_LEFT);
-            $validatedData['customer_id'] = $generatedCustomerId;
+             if ($latestCustomer && $latestCustomer->customer_id) {
+                // customer_id example: RA18/000123
+                $numberPart = str_replace($prefix, '', $latestCustomer->customer_id);
+                $number = ((int) $numberPart) + 1;
+             }
+
+             $validatedData['customer_id'] = $prefix . $number;
 
             // Create the customer
             $customer = Customer::create($validatedData);
