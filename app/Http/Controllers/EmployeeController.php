@@ -187,15 +187,20 @@ class EmployeeController extends Controller
                     ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
                 $creditUse = $creditUseFromInvoices + $creditUseFromOrders;
+                //  Total Sale (invoice based)
+                $totalSale = DB::table('invoices')
+                ->where('employee_id', $employee->id)
+                ->sum('grand_total'); // invoice total column
                 $creditLimit = $employee->credit_limit ?? 0;
                 $creditDue = $creditLimit - $creditUse;
 
                 return [
                     'id' => $employee->id,
                     'employee_name' => $employee->name,
-                    'credit_limit' => $creditLimit,
-                    'credit_use' => $creditUse,
-                    'credit_due' => $creditDue,
+                    'credit_limit' => number_format($creditLimit, 2),
+                    'credit_use' => number_format($creditUse, 2),
+                    'credit_due' => number_format($creditDue, 2),
+                    'total_sale' => number_format($totalSale, 2),
                 ];
             });
 

@@ -1143,6 +1143,5 @@ class ReportController extends Controller
         ]);
     }
 
-
     public function report($id) {}
 }
