@@ -308,7 +308,7 @@ class ReportController extends Controller
                 ->pluck('employee_id'); // Get related Officer IDs
 
             // Get invoices for all Officers
-            $officerInvoices = Invoice::whereIn('employee_id', $officers)->get();
+            $officerInvoices = Invoice::with('customer')->whereIn('employee_id', $officers)->get();
 
             // Merge all officer invoices
             $allInvoices = $allInvoices->merge($officerInvoices);
@@ -322,7 +322,7 @@ class ReportController extends Controller
                 ->pluck('employee_id'); // Get related Officer IDs
 
             // Get invoices for Officers under the Manager
-            $officerInvoices = Invoice::whereIn('employee_id', $officers)->get();
+            $officerInvoices = Invoice::with('customer')->whereIn('employee_id', $officers)->get();
 
             // Merge all officer invoices
             $allInvoices = $allInvoices->merge($officerInvoices);
