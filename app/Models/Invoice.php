@@ -21,6 +21,8 @@ class Invoice extends Model
         'due',
         'sale_date',
         'sale_type',
+        'is_printed',
+        'printed_at'     
     ];
 
     public function customer()

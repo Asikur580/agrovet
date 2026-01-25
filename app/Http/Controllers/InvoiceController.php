@@ -513,10 +513,10 @@ class InvoiceController extends Controller
             'printed_at' => now()
         ]);
 
-          return response()->json([
-                'status' => true,
-                'message' => 'Invoice marked as printed',
+        return response()->json([
+            'status' => true,
+            'message' => 'Invoice marked as printed',
                 'data' => null,
-            ]);     
+        ]);
     }
 }
