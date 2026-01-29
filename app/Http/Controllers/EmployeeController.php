@@ -167,30 +167,49 @@ class EmployeeController extends Controller
         }
     }
 
-    public function creditReport()
+    public function creditReport(Request $request)
     {
         try {
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+
             $employees = Employee::where('status', 'active')->get();
 
-            $report = $employees->map(function ($employee) {
+            $report = $employees->map(function ($employee) use ($fromDate, $toDate) {
                 // Total due from invoices
-                $creditUseFromInvoices = DB::table('invoices')
+                $invoiceQuery = DB::table('invoices')
                     ->where('employee_id', $employee->id)
-                    ->where('sale_type', 'credit')
-                    ->sum('due');
+                    ->where('sale_type', 'credit');
+
+                if ($fromDate && $toDate) {
+                    $invoiceQuery->whereBetween('sale_date', [$fromDate, $toDate]);
+                }
+
+                $creditUseFromInvoices = $invoiceQuery->sum('due');
 
                 // Total amount from pending orders (not yet invoiced)
-                $creditUseFromOrders = DB::table('orders')
+                $orderQuery = DB::table('orders')
                     ->where('employee_id', $employee->id)
-                    ->where('orders.order_type', 'credit')
-                    ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+                    ->where('orders.order_type', 'credit');
+
+                if ($fromDate && $toDate) {
+                    $orderQuery->whereBetween('order_date', [$fromDate, $toDate]);
+                }
+
+                $creditUseFromOrders = $orderQuery->join('order_products', 'orders.id', '=', 'order_products.order_id')
                     ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
                 $creditUse = $creditUseFromInvoices + $creditUseFromOrders;
+
                 //  Total Sale (invoice based)
-                $totalSale = DB::table('invoices')
-                ->where('employee_id', $employee->id)
-                ->sum('grand_total'); // invoice total column
+                $saleQuery = DB::table('invoices')
+                    ->where('employee_id', $employee->id);
+
+                if ($fromDate && $toDate) {
+                    $saleQuery->whereBetween('sale_date', [$fromDate, $toDate]);
+                }
+
+                $totalSale = $saleQuery->sum('grand_total'); // invoice total column
                 $creditLimit = $employee->credit_limit ?? 0;
                 $creditDue = $creditLimit - $creditUse;
 

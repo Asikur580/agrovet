@@ -122,10 +122,7 @@ class ReportController extends Controller
             )
             ->where('invoices.cust_id', $id)
             ->orderBy('invoices.sale_date', 'asc')
-            ->get();
-
-        // Calculate the total due for the customer
-        $totalDue = $customerInvoices->sum('due');
+            ->get();       
 
         // 1. Total Purchases (Total amount spent by the customer)
         $totalPurchases = $customerInvoices->sum('grand_total'); // Sum of grand_total from the invoices
@@ -134,6 +131,8 @@ class ReportController extends Controller
         $totalPayments = Payment::where('cust_id', $id)
             ->sum('amount'); // Total payments made by the customer
 
+        $oldDue = $customerDetails->old_due;
+
         // Return the data in the response
         return response()->json([
             'status' => true,
@@ -141,9 +140,9 @@ class ReportController extends Controller
             'data' => [
                 'customer_details' => $customerDetails,
                 'customer_invoices' => $customerInvoices,
-                'total_purchases' => $totalPurchases,
-                'total_payments' => $totalPayments,
-                'total_due' => $totalDue,
+                'total_purchases' => number_format($totalPurchases, 2, '.', ''),
+                'total_payments' => number_format($totalPayments, 2, '.', ''),
+                'total_due' => number_format($totalPurchases - $totalPayments + $oldDue, 2, '.', '')
             ]
         ]);
     }
@@ -167,12 +166,7 @@ class ReportController extends Controller
                 if ($fromDate && $toDate) {
                     $q->whereBetween('sale_date', [$fromDate, $toDate]);
                 }
-            }], 'grand_total')
-                ->withSum(['invoices as total_due' => function ($q) use ($fromDate, $toDate) {
-                    if ($fromDate && $toDate) {
-                        $q->whereBetween('sale_date', [$fromDate, $toDate]);
-                    }
-                }], 'due')
+            }], 'grand_total')                
                 ->withCount(['invoices as total_invoices' => function ($q) use ($fromDate, $toDate) {
                     if ($fromDate && $toDate) {
                         $q->whereBetween('sale_date', [$fromDate, $toDate]);
@@ -191,9 +185,10 @@ class ReportController extends Controller
                     'customer_name' => $customer->customer_name,
                     'phone' => $customer->phone,
                     'total_invoices' => $customer->total_invoices ?? 0,
-                    'total_purchases' => $customer->total_purchases ?? 0,
-                    'total_payments' => $customer->total_payments ?? 0,
-                    'total_due' => $customer->total_due ?? 0,
+                    'old_due' => number_format($customer->old_due ?? 0, 2, '.', ''),
+                    'total_purchases' => number_format($customer->total_purchases ?? 0, 2, '.', ''),
+                    'total_payments' => number_format($customer->total_payments ?? 0, 2, '.', ''),
+                    'total_due' => number_format($customer->total_purchases - $customer->total_payments + $customer->old_due ?? 0, 2, '.', ''),
                 ];
             });
 
@@ -258,8 +253,8 @@ class ReportController extends Controller
                 'categories.id',
                 'categories.name as category_name',
                 DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
-                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
-                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_amount')
+                DB::raw('SUM(invoice_products.quantity) as total_quantity'),              
+                DB::raw('SUM((invoice_products.quantity * invoice_products.unit_price) * (CASE WHEN invoices.total_price > 0 THEN (invoices.grand_total / invoices.total_price) ELSE 0 END)) as total_amount')
             )
                 ->leftJoin('products', 'categories.id', '=', 'products.cat_id')
                 ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')

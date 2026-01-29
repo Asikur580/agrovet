@@ -167,7 +167,8 @@ class CustomerController extends Controller
                 'customer_name' => 'required|string|max:255',
                 'proprietor_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20', // Exclude the current record
-                'address' => 'required|string|max:255'
+                'address' => 'required|string|max:255',
+                'old_due' => 'required|numeric|min:0'
             ]);
 
             // Fetch the employee and their designation

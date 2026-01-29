@@ -15,9 +15,8 @@ class Customer extends Model
         'proprietor_name',
         'phone',
         'address',
-        'image',
-        'balance',
-        'due',
+        'image',       
+        'old_due',
     ];
 
     /**

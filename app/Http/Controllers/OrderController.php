@@ -136,7 +136,6 @@ class OrderController extends Controller
         $managerId = Relation::where('employee_id', $employee->id)->value('relation_id');
         $managerEmail = optional(Employee::find($managerId)?->user)->email;
 
-        //dd('ok');
         DB::beginTransaction();
 
         try {

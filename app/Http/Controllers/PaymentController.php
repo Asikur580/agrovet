@@ -47,36 +47,36 @@ class PaymentController extends Controller
             // পেমেন্ট তৈরি করা
             $payment = Payment::create($validatedData);
 
-            // যদি কাস্টমার থাকে তাহলে ইনভয়েসের due অ্যাডজাস্ট করবো
-            if ($validatedData['cust_id']) {
-                $customerId = $validatedData['cust_id'];
-                $paymentAmount = $validatedData['amount'];
+            // // যদি কাস্টমার থাকে তাহলে ইনভয়েসের due অ্যাডজাস্ট করবো
+            // if ($validatedData['cust_id']) {
+            //     $customerId = $validatedData['cust_id'];
+            //     $paymentAmount = $validatedData['amount'];
 
-                // ওই কাস্টমারের due থাকা ইনভয়েসগুলো খুঁজে বের করা
-                $invoices = Invoice::where('cust_id', $customerId)
-                    ->where('due', '>', 0)
-                    ->orderBy('created_at', 'asc') // পুরনো ইনভয়েস আগে পেমেন্ট হবে
-                    ->get();
+            //     // ওই কাস্টমারের due থাকা ইনভয়েসগুলো খুঁজে বের করা
+            //     $invoices = Invoice::where('cust_id', $customerId)
+            //         ->where('due', '>', 0)
+            //         ->orderBy('created_at', 'asc') // পুরনো ইনভয়েস আগে পেমেন্ট হবে
+            //         ->get();
 
-                foreach ($invoices as $invoice) {
-                    if ($paymentAmount <= 0) {
-                        break; // পেমেন্ট শেষ হলে লুপ বন্ধ
-                    }
+            //     foreach ($invoices as $invoice) {
+            //         if ($paymentAmount <= 0) {
+            //             break; // পেমেন্ট শেষ হলে লুপ বন্ধ
+            //         }
 
-                    if ($invoice->due <= $paymentAmount) {
-                        // যদি পুরো ইনভয়েস পরিশোধ করা সম্ভব হয়
-                        $paymentAmount -= $invoice->due;
-                        $invoice->due = 0; // ইনভয়েস পুরো পরিশোধ হয়ে গেছে
-                    } else {
-                        // ইনভয়েস আংশিক পরিশোধ হবে
-                        $invoice->due -= $paymentAmount;
-                        $paymentAmount = 0;
-                    }
+            //         if ($invoice->due <= $paymentAmount) {
+            //             // যদি পুরো ইনভয়েস পরিশোধ করা সম্ভব হয়
+            //             $paymentAmount -= $invoice->due;
+            //             $invoice->due = 0; // ইনভয়েস পুরো পরিশোধ হয়ে গেছে
+            //         } else {
+            //             // ইনভয়েস আংশিক পরিশোধ হবে
+            //             $invoice->due -= $paymentAmount;
+            //             $paymentAmount = 0;
+            //         }
 
-                    $invoice->save(); // ইনভয়েস আপডেট সেভ করা
-                }
+            //         $invoice->save(); // ইনভয়েস আপডেট সেভ করা
+            //     }
                 
-            }
+            // }
 
             DB::commit(); // সব ঠিক থাকলে ট্রানজেকশন কমিট করা
 
