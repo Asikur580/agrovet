@@ -77,24 +77,64 @@ class ReportController extends Controller
 
     public function productReport($id)
     {
-        $productDetails = Product::find($id);
+        $productDetails = Product::findOrFail($id);
+    
         $productSales = DB::table('invoice_products')
             ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
             ->join('customers', 'invoices.cust_id', '=', 'customers.id')
             ->select(
                 'invoices.sale_date',
+                'customers.customer_name',
                 'invoice_products.quantity',
+                'invoice_products.unit_price',
                 'invoices.grand_total',
-                'customers.customer_name as customer_name'
+                'invoices.discount',
+    
+                // item_amount
+                DB::raw('
+                    (invoice_products.quantity * invoice_products.unit_price)
+                    as item_amount
+                '),
+    
+                // discount = (item_amount / total_amount) * total_discount
+                DB::raw('
+                    ROUND(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / invoices.grand_total
+                        ) * invoices.discount
+                    , 2)
+                    as item_discount
+                '),
+    
+                // net_amount = item_amount - discount
+                DB::raw('
+                    ROUND(
+                        (invoice_products.quantity * invoice_products.unit_price)
+                        -
+                        (
+                            (
+                                (invoice_products.quantity * invoice_products.unit_price)
+                                / invoices.grand_total
+                            ) * invoices.discount
+                        )
+                    , 2)
+                    as net_amount
+                ')
             )
             ->where('invoice_products.product_id', $id)
-            ->orderBy('invoices.sale_date', 'asc') 
+            ->orderBy('invoices.sale_date', 'asc')
             ->get();
-
+    
+       
+    
         return response()->json([
             'status' => true,
             'message' => 'Product sale report retrieved successfully',
-            'data' => ['prodcut_details' => $productDetails, 'product_sales' => $productSales]
+            'data' => [
+                'prodcut_details' => $productDetails,
+                'product_sales'   => $productSales
+            ]
         ]);
     }
 
@@ -122,7 +162,7 @@ class ReportController extends Controller
             )
             ->where('invoices.cust_id', $id)
             ->orderBy('invoices.sale_date', 'asc')
-            ->get();       
+            ->get();
 
         // 1. Total Purchases (Total amount spent by the customer)
         $totalPurchases = $customerInvoices->sum('grand_total'); // Sum of grand_total from the invoices
@@ -162,21 +202,27 @@ class ReportController extends Controller
                 });
             }
 
-            $customers = $query->withSum(['invoices as total_purchases' => function ($q) use ($fromDate, $toDate) {
-                if ($fromDate && $toDate) {
-                    $q->whereBetween('sale_date', [$fromDate, $toDate]);
-                }
-            }], 'grand_total')                
-                ->withCount(['invoices as total_invoices' => function ($q) use ($fromDate, $toDate) {
+            $customers = $query->withSum([
+                'invoices as total_purchases' => function ($q) use ($fromDate, $toDate) {
                     if ($fromDate && $toDate) {
                         $q->whereBetween('sale_date', [$fromDate, $toDate]);
                     }
-                }])
-                ->withSum(['payments as total_payments' => function ($q) use ($fromDate, $toDate) {
-                    if ($fromDate && $toDate) {
-                        $q->whereBetween('payment_date', [$fromDate, $toDate]);
+                }
+            ], 'grand_total')
+                ->withCount([
+                    'invoices as total_invoices' => function ($q) use ($fromDate, $toDate) {
+                        if ($fromDate && $toDate) {
+                            $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                        }
                     }
-                }], 'amount')
+                ])
+                ->withSum([
+                    'payments as total_payments' => function ($q) use ($fromDate, $toDate) {
+                        if ($fromDate && $toDate) {
+                            $q->whereBetween('payment_date', [$fromDate, $toDate]);
+                        }
+                    }
+                ], 'amount')
                 ->get();
 
             $report = $customers->map(function ($customer) {
@@ -209,19 +255,26 @@ class ReportController extends Controller
     public function productWiseSalesReport(Request $request)
     {
         try {
-            $fromDate = $request->input('from_date');
-            $toDate = $request->input('to_date');
+            $fromDate = $request->from_date;
+            $toDate = $request->to_date;
 
             $query = Product::select(
                 'products.id',
                 'products.name as product_name',
-                DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
+                'products.pack_size',
+                // কতগুলো আলাদা invoice এ product আছে
+                DB::raw('COUNT(DISTINCT invoices.id) as total_invoice'),
+
+                // product total qty
                 DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity'),
-                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_amount')
+
+                // product যেসব invoice এ আছে, সেই invoice গুলোর grand_total যোগ
+                DB::raw('ROUND(SUM(DISTINCT invoices.grand_total), 2) as total_amount')
+
             )
-                ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')
-                ->leftJoin('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
-                ->groupBy('products.id', 'products.name');
+                ->join('invoice_products', 'products.id', '=', 'invoice_products.product_id')
+                ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                ->groupBy('products.id', 'products.name', 'products.pack_size');
 
             if ($fromDate && $toDate) {
                 $query->whereBetween('invoices.sale_date', [$fromDate, $toDate]);
@@ -234,7 +287,7 @@ class ReportController extends Controller
                 'message' => 'Product wise sales report retrieved successfully',
                 'data' => $report
             ]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve product wise sales report',
@@ -253,7 +306,7 @@ class ReportController extends Controller
                 'categories.id',
                 'categories.name as category_name',
                 DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
-                DB::raw('SUM(invoice_products.quantity) as total_quantity'),              
+                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
                 DB::raw('SUM((invoice_products.quantity * invoice_products.unit_price) * (CASE WHEN invoices.total_price > 0 THEN (invoices.grand_total / invoices.total_price) ELSE 0 END)) as total_amount')
             )
                 ->leftJoin('products', 'categories.id', '=', 'products.cat_id')
@@ -681,7 +734,7 @@ class ReportController extends Controller
             $lowStockThreshold = $request->input('threshold', 10);
 
             $lowStockProducts = Product::where('quantity', '<=', $lowStockThreshold)
-                ->select('id', 'name','pack_size', 'quantity')
+                ->select('id', 'name', 'pack_size', 'quantity')
                 ->get()
                 ->map(function ($product) {
                     return [
@@ -771,9 +824,11 @@ class ReportController extends Controller
             ->sum('due');
 
         // 3. Paid Amount vs Due Amount (For each customer)
-        $paymentsVsDues = Customer::with(['invoices' => function ($query) use ($fromDate, $toDate) {
-            $query->whereBetween('sale_date', [$fromDate, $toDate]);
-        }])->get()->map(function ($customer) {
+        $paymentsVsDues = Customer::with([
+            'invoices' => function ($query) use ($fromDate, $toDate) {
+                $query->whereBetween('sale_date', [$fromDate, $toDate]);
+            }
+        ])->get()->map(function ($customer) {
             $grand_total = $customer->invoices->sum('grand_total');
             $totalPaid = $customer->invoices->sum('paid');
             $totalDue = $customer->invoices->sum('due');
@@ -1138,5 +1193,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function report($id) {}
+    public function report($id)
+    {
+    }
 }
