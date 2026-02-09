@@ -89,6 +89,7 @@ class ReportController extends Controller
                 'invoice_products.unit_price',
                 'invoices.grand_total',
                 'invoices.discount',
+                'invoices.less',
     
                 // item_amount
                 DB::raw('
@@ -96,7 +97,7 @@ class ReportController extends Controller
                     as item_amount
                 '),
     
-                // discount = (item_amount / total_amount) * total_discount
+                // discount = (item_amount / total_amount) * discount
                 DB::raw('
                     ROUND(
                         (
@@ -106,8 +107,19 @@ class ReportController extends Controller
                     , 2)
                     as item_discount
                 '),
+
+                 // less = (item_amount / total_amount) * less
+                DB::raw('
+                    ROUND(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / invoices.grand_total
+                        ) * invoices.less
+                    , 2)
+                    as item_less
+                '),
     
-                // net_amount = item_amount - discount
+                // net_amount = item_amount - discount - less
                 DB::raw('
                     ROUND(
                         (invoice_products.quantity * invoice_products.unit_price)
@@ -117,6 +129,13 @@ class ReportController extends Controller
                                 (invoice_products.quantity * invoice_products.unit_price)
                                 / invoices.grand_total
                             ) * invoices.discount
+                        )
+                        -
+                        (
+                            (
+                                (invoice_products.quantity * invoice_products.unit_price)
+                                / invoices.grand_total
+                            ) * invoices.less
                         )
                     , 2)
                     as net_amount
@@ -132,7 +151,7 @@ class ReportController extends Controller
             'status' => true,
             'message' => 'Product sale report retrieved successfully',
             'data' => [
-                'prodcut_details' => $productDetails,
+                'product_details' => $productDetails,
                 'product_sales'   => $productSales
             ]
         ]);
