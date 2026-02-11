@@ -30,41 +30,38 @@ class ReportController extends Controller
             $toDate = $request->to_date;
 
             // Base Query
-            $query = Invoice::select('sale_type', 'grand_total', 'sale_date');
+            $query = Invoice::query();
 
             // -------------------------
-            // 🔥 DATE FILTER (Last X Days)
-            // -------------------------
-            if ($days) {
-                $startDate = Carbon::now()->subDays($days)->startOfDay();
-                $endDate = Carbon::now()->endOfDay();
-                $query->whereBetween('sale_date', [$startDate, $endDate]);
-            }
-
-            // -------------------------
-            // 🔥 CUSTOM DATE FILTER
+            // 🔥 DATE FILTER (Priority: Specific Range > Predefined Days)
             // -------------------------
             if ($fromDate && $toDate) {
                 $query->whereBetween('sale_date', [
                     Carbon::parse($fromDate)->startOfDay(),
                     Carbon::parse($toDate)->endOfDay()
                 ]);
+            } elseif ($days) {
+                $startDate = Carbon::now()->subDays($days)->startOfDay();
+                $endDate = Carbon::now()->endOfDay();
+                $query->whereBetween('sale_date', [$startDate, $endDate]);
             }
 
-            $invoices = $query->get();
+            // -------------------------
+            // 🔥 AGGREGATE TOTALS IN DB
+            // -------------------------
+            $totals = $query->select('sale_type', DB::raw('SUM(grand_total) as total'))
+                ->groupBy('sale_type')
+                ->pluck('total', 'sale_type');
 
-            // -------------------------
-            // 🔥 CALCULATE TOTALS
-            // -------------------------
-            $cashTotal = $invoices->where('sale_type', 'cash')->sum('grand_total');
-            $creditTotal = $invoices->where('sale_type', 'credit')->sum('grand_total');
+            $cashTotal = $totals->get('cash', 0);
+            $creditTotal = $totals->get('credit', 0);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Cash credit sale report fetched successfully',
                 'data' => [
-                    'cash_total' => $cashTotal,
-                    'credit_total' => $creditTotal,
+                    'cash_total' => (float) $cashTotal,
+                    'credit_total' => (float) $creditTotal,
                 ]
             ]);
         } catch (Exception $e) {
@@ -78,7 +75,7 @@ class ReportController extends Controller
     public function productReport($id)
     {
         $productDetails = Product::findOrFail($id);
-    
+
         $productSales = DB::table('invoice_products')
             ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
             ->join('customers', 'invoices.cust_id', '=', 'customers.id')
@@ -86,57 +83,48 @@ class ReportController extends Controller
                 'invoices.sale_date',
                 'customers.customer_name',
                 'invoice_products.quantity',
+                'invoice_products.bonus_qty',
                 'invoice_products.unit_price',
+                'invoices.total_price',
                 'invoices.grand_total',
                 'invoices.discount',
                 'invoices.less',
-    
+
                 // item_amount
                 DB::raw('
                     (invoice_products.quantity * invoice_products.unit_price)
                     as item_amount
                 '),
-    
+
                 // discount = (item_amount / total_amount) * discount
                 DB::raw('
                     ROUND(
                         (
                             (invoice_products.quantity * invoice_products.unit_price)
-                            / invoices.grand_total
+                            / invoices.total_price
                         ) * invoices.discount
                     , 2)
                     as item_discount
                 '),
 
-                 // less = (item_amount / total_amount) * less
+                // less = (item_amount / total_amount) * less
                 DB::raw('
                     ROUND(
                         (
                             (invoice_products.quantity * invoice_products.unit_price)
-                            / invoices.grand_total
+                            / invoices.total_price
                         ) * invoices.less
                     , 2)
                     as item_less
                 '),
-    
+
                 // net_amount = item_amount - discount - less
                 DB::raw('
                     ROUND(
-                        (invoice_products.quantity * invoice_products.unit_price)
-                        -
                         (
-                            (
-                                (invoice_products.quantity * invoice_products.unit_price)
-                                / invoices.grand_total
-                            ) * invoices.discount
-                        )
-                        -
-                        (
-                            (
-                                (invoice_products.quantity * invoice_products.unit_price)
-                                / invoices.grand_total
-                            ) * invoices.less
-                        )
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
                     , 2)
                     as net_amount
                 ')
@@ -144,15 +132,15 @@ class ReportController extends Controller
             ->where('invoice_products.product_id', $id)
             ->orderBy('invoices.sale_date', 'asc')
             ->get();
-    
-       
-    
+
+
+
         return response()->json([
             'status' => true,
             'message' => 'Product sale report retrieved successfully',
             'data' => [
                 'product_details' => $productDetails,
-                'product_sales'   => $productSales
+                'product_sales' => $productSales
             ]
         ]);
     }
@@ -211,34 +199,69 @@ class ReportController extends Controller
         try {
             $fromDate = $request->input('from_date');
             $toDate = $request->input('to_date');
+            $days = $request->days;
 
             $query = Customer::query();
 
-            // If date filter is applied, only fetch customers who have invoices in that range
+            // Filter customers who have invoices in the requested range
             if ($fromDate && $toDate) {
                 $query->whereHas('invoices', function ($q) use ($fromDate, $toDate) {
-                    $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                    $q->whereBetween('sale_date', [
+                        Carbon::parse($fromDate)->startOfDay(),
+                        Carbon::parse($toDate)->endOfDay()
+                    ]);
+                });
+            } elseif ($days) {
+                $query->whereHas('invoices', function ($q) use ($days) {
+                    $q->whereBetween('sale_date', [
+                        Carbon::now()->subDays($days)->startOfDay(),
+                        Carbon::now()->endOfDay()
+                    ]);
                 });
             }
 
             $customers = $query->withSum([
-                'invoices as total_purchases' => function ($q) use ($fromDate, $toDate) {
+                'invoices as total_purchases' => function ($q) use ($fromDate, $toDate, $days) {
                     if ($fromDate && $toDate) {
-                        $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                        $q->whereBetween('sale_date', [
+                            Carbon::parse($fromDate)->startOfDay(),
+                            Carbon::parse($toDate)->endOfDay()
+                        ]);
+                    } elseif ($days) {
+                        $q->whereBetween('sale_date', [
+                            Carbon::now()->subDays($days)->startOfDay(),
+                            Carbon::now()->endOfDay()
+                        ]);
                     }
                 }
             ], 'grand_total')
                 ->withCount([
-                    'invoices as total_invoices' => function ($q) use ($fromDate, $toDate) {
+                    'invoices as total_invoices' => function ($q) use ($fromDate, $toDate, $days) {
                         if ($fromDate && $toDate) {
-                            $q->whereBetween('sale_date', [$fromDate, $toDate]);
+                            $q->whereBetween('sale_date', [
+                                Carbon::parse($fromDate)->startOfDay(),
+                                Carbon::parse($toDate)->endOfDay()
+                            ]);
+                        } elseif ($days) {
+                            $q->whereBetween('sale_date', [
+                                Carbon::now()->subDays($days)->startOfDay(),
+                                Carbon::now()->endOfDay()
+                            ]);
                         }
                     }
                 ])
                 ->withSum([
-                    'payments as total_payments' => function ($q) use ($fromDate, $toDate) {
+                    'payments as total_payments' => function ($q) use ($fromDate, $toDate, $days) {
                         if ($fromDate && $toDate) {
-                            $q->whereBetween('payment_date', [$fromDate, $toDate]);
+                            $q->whereBetween('payment_date', [
+                                Carbon::parse($fromDate)->startOfDay(),
+                                Carbon::parse($toDate)->endOfDay()
+                            ]);
+                        } elseif ($days) {
+                            $q->whereBetween('payment_date', [
+                                Carbon::now()->subDays($days)->startOfDay(),
+                                Carbon::now()->endOfDay()
+                            ]);
                         }
                     }
                 ], 'amount')
@@ -281,14 +304,44 @@ class ReportController extends Controller
                 'products.id',
                 'products.name as product_name',
                 'products.pack_size',
-                // কতগুলো আলাদা invoice এ product আছে
+                // how manay invoice has this product
                 DB::raw('COUNT(DISTINCT invoices.id) as total_invoice'),
 
                 // product total qty
                 DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity'),
 
-                // product যেসব invoice এ আছে, সেই invoice গুলোর grand_total যোগ
-                DB::raw('ROUND(SUM(DISTINCT invoices.grand_total), 2) as total_amount')
+                // total item amount = (quantity * unit_price)
+                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_item_amount'),
+
+                // total discount = SUM((item_amount / total_amount) * discount)
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.discount
+                    ) as total_item_discount
+                '),
+
+                // total less = SUM((item_amount / total_amount) * less)
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.less
+                    ) as total_item_less
+                '),
+
+                // total net_amount = SUM(item_amount - discount - less)
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
+                    ) as total_amount
+                ')
 
             )
                 ->join('invoice_products', 'products.id', '=', 'invoice_products.product_id')
@@ -296,7 +349,14 @@ class ReportController extends Controller
                 ->groupBy('products.id', 'products.name', 'products.pack_size');
 
             if ($fromDate && $toDate) {
-                $query->whereBetween('invoices.sale_date', [$fromDate, $toDate]);
+                $query->whereBetween('invoices.sale_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif ($request->days) {
+                $startDate = Carbon::now()->subDays($request->days)->startOfDay();
+                $endDate = Carbon::now()->endOfDay();
+                $query->whereBetween('invoices.sale_date', [$startDate, $endDate]);
             }
 
             $report = $query->get();
@@ -306,7 +366,7 @@ class ReportController extends Controller
                 'message' => 'Product wise sales report retrieved successfully',
                 'data' => $report
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve product wise sales report',
@@ -325,8 +385,15 @@ class ReportController extends Controller
                 'categories.id',
                 'categories.name as category_name',
                 DB::raw('COUNT(DISTINCT invoice_products.invoice_id) as total_invoice'),
-                DB::raw('SUM(invoice_products.quantity) as total_quantity'),
-                DB::raw('SUM((invoice_products.quantity * invoice_products.unit_price) * (CASE WHEN invoices.total_price > 0 THEN (invoices.grand_total / invoices.total_price) ELSE 0 END)) as total_amount')
+                DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity'),
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
+                    ) as total_amount
+                ')
             )
                 ->leftJoin('products', 'categories.id', '=', 'products.cat_id')
                 ->leftJoin('invoice_products', 'products.id', '=', 'invoice_products.product_id')
@@ -334,7 +401,14 @@ class ReportController extends Controller
                 ->groupBy('categories.id', 'categories.name');
 
             if ($fromDate && $toDate) {
-                $query->whereBetween('invoices.sale_date', [$fromDate, $toDate]);
+                $query->whereBetween('invoices.sale_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif ($request->days) {
+                $startDate = Carbon::now()->subDays($request->days)->startOfDay();
+                $endDate = Carbon::now()->endOfDay();
+                $query->whereBetween('invoices.sale_date', [$startDate, $endDate]);
             }
 
             $report = $query->get();
@@ -450,25 +524,75 @@ class ReportController extends Controller
         ]);
     }
 
-    public function brandReport($id)
+    public function brandReport(Request $request, $id)
     {
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $days = $request->days;
+
         // Total sales amount for the brand
-        $salesByBrand = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
+        $query = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
             ->join('products', 'invoice_products.product_id', '=', 'products.id')
             ->join('brands', 'products.brand_id', '=', 'brands.id')
-            ->where('brands.id', $id) // Filter by brand ID
-            ->groupBy('brands.id', 'brands.name')
-            ->selectRaw('brands.name, SUM(invoice_products.quantity * invoice_products.unit_price) as total_sales')
-            ->first(); // Get single brand sales data
+            ->where('brands.id', $id)
+            ->groupBy('brands.id', 'brands.name');
+
+        if ($fromDate && $toDate) {
+            $query->whereBetween('invoices.sale_date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+        } elseif ($days) {
+            $query->whereBetween('invoices.sale_date', [
+                Carbon::now()->subDays($days)->startOfDay(),
+                Carbon::now()->endOfDay()
+            ]);
+        }
+
+        $salesByBrand = $query->select(
+            'brands.name',
+            DB::raw('
+                SUM(
+                    (
+                        (invoice_products.quantity * invoice_products.unit_price)
+                        / (invoices.total_price + 1e-9)
+                    ) * invoices.grand_total
+                ) as total_sales
+            ')
+        )->first();
 
         // Get total quantity of each product sold under this brand along with sale dates
-        $productSales = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
+        $productQuery = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
             ->join('products', 'invoice_products.product_id', '=', 'products.id')
-            ->where('products.brand_id', $id) // Filter by brand ID
+            ->where('products.brand_id', $id)
             ->groupBy('products.id', 'products.name', 'invoices.sale_date')
-            ->orderBy('invoices.sale_date', 'asc') // Order by sale date
-            ->selectRaw('products.name, invoices.sale_date, SUM(invoice_products.quantity) as total_quantity_sold')
-            ->get(); // Get multiple products under the brand with sale dates
+            ->orderBy('invoices.sale_date', 'asc');
+
+        if ($fromDate && $toDate) {
+            $productQuery->whereBetween('invoices.sale_date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+        } elseif ($days) {
+            $productQuery->whereBetween('invoices.sale_date', [
+                Carbon::now()->subDays($days)->startOfDay(),
+                Carbon::now()->endOfDay()
+            ]);
+        }
+
+        $productSales = $productQuery->select(
+            'products.name',
+            'invoices.sale_date',
+            DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity_sold'),
+            DB::raw('
+                SUM(
+                    (
+                        (invoice_products.quantity * invoice_products.unit_price)
+                        / (invoices.total_price + 1e-9)
+                    ) * invoices.grand_total
+                ) as total_amount
+            ')
+        )->get();
 
         if (!$salesByBrand) {
             return response()->json([
@@ -484,30 +608,81 @@ class ReportController extends Controller
             'data' => [
                 'brand_name' => $salesByBrand->name,
                 'total_sales' => $salesByBrand->total_sales,
-                'products_sold' => $productSales // List of products with sale date and total quantity
+                'products_sold' => $productSales,
+                'total_amount' => $productSales->sum('total_amount'),
             ]
         ]);
     }
 
 
-    public function categoryReport($id)
+    public function categoryReport(Request $request, $id)
     {
-        $salesByCategory = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $days = $request->days;
+
+        $query = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
             ->join('products', 'invoice_products.product_id', '=', 'products.id')
             ->join('categories', 'products.cat_id', '=', 'categories.id')
-            ->where('categories.id', $id) // Filter by category ID
-            ->groupBy('categories.id', 'categories.name')
-            ->selectRaw('categories.name, SUM(invoice_products.quantity * invoice_products.unit_price) as total_sales')
-            ->first(); // Get single category sales data
+            ->where('categories.id', $id)
+            ->groupBy('categories.id', 'categories.name');
+
+        if ($fromDate && $toDate) {
+            $query->whereBetween('invoices.sale_date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+        } elseif ($days) {
+            $query->whereBetween('invoices.sale_date', [
+                Carbon::now()->subDays($days)->startOfDay(),
+                Carbon::now()->endOfDay()
+            ]);
+        }
+
+        $salesByCategory = $query->select(
+            'categories.name',
+            DB::raw('
+                SUM(
+                    (
+                        (invoice_products.quantity * invoice_products.unit_price)
+                        / (invoices.total_price + 1e-9)
+                    ) * invoices.grand_total
+                ) as total_sales
+            ')
+        )->first();
 
         // Get total quantity of each product sold under this category along with sale dates
-        $productSales = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
+        $productQuery = Invoice::join('invoice_products', 'invoices.id', '=', 'invoice_products.invoice_id')
             ->join('products', 'invoice_products.product_id', '=', 'products.id')
-            ->where('products.cat_id', $id) // Filter by category ID
+            ->where('products.cat_id', $id)
             ->groupBy('products.id', 'products.name', 'invoices.sale_date')
-            ->orderBy('invoices.sale_date', 'asc') // Order by sale date
-            ->selectRaw('products.name, invoices.sale_date, SUM(invoice_products.quantity) as total_quantity_sold')
-            ->get(); // Get multiple products under the category with sale dates
+            ->orderBy('invoices.sale_date', 'asc');
+
+        if ($fromDate && $toDate) {
+            $productQuery->whereBetween('invoices.sale_date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+        } elseif ($days) {
+            $productQuery->whereBetween('invoices.sale_date', [
+                Carbon::now()->subDays($days)->startOfDay(),
+                Carbon::now()->endOfDay()
+            ]);
+        }
+
+        $productSales = $productQuery->select(
+            'products.name',
+            'invoices.sale_date',
+            DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity_sold'),
+            DB::raw('
+                SUM(
+                    (
+                        (invoice_products.quantity * invoice_products.unit_price)
+                        / (invoices.total_price + 1e-9)
+                    ) * invoices.grand_total
+                ) as total_amount
+            ')
+        )->get();
 
         if (!$salesByCategory) {
             return response()->json([
@@ -523,7 +698,8 @@ class ReportController extends Controller
             'data' => [
                 'category_name' => $salesByCategory->name,
                 'total_sales' => $salesByCategory->total_sales,
-                'products_sold' => $productSales // List of products with sale date and total quantity
+                'products_sold' => $productSales,
+                'total_amount' => $productSales->sum('total_amount'),
             ]
         ]);
     }
@@ -542,23 +718,15 @@ class ReportController extends Controller
         $invoicesQuery = Invoice::with('employee:id,name', 'customer:id,customer_name')
             ->where('due', '>', 0);
 
-        // -------------------------
-        // 🔥 FILTER 1: PREDEFINED DAYS (30,45,60,90)
-        // -------------------------
-        if ($daysFilter) {
-            $startDate = Carbon::now()->subDays($daysFilter)->startOfDay();
-            $endDate = Carbon::now()->endOfDay();
-
-            $invoicesQuery->whereBetween('sale_date', [$startDate, $endDate]);
-        }
-
-        // -------------------------
-        // 🔥 FILTER 2: CUSTOM DATE RANGE
-        // -------------------------
         if ($fromDate && $toDate) {
             $invoicesQuery->whereBetween('sale_date', [
                 Carbon::parse($fromDate)->startOfDay(),
                 Carbon::parse($toDate)->endOfDay()
+            ]);
+        } elseif ($daysFilter) {
+            $invoicesQuery->whereBetween('sale_date', [
+                Carbon::now()->subDays($daysFilter)->startOfDay(),
+                Carbon::now()->endOfDay()
             ]);
         }
 
@@ -621,27 +789,44 @@ class ReportController extends Controller
 
     public function generateProfitLossReport(Request $request)
     {
-        // Get the date range from the request (e.g., from_date, to_date)
+        // Get the date range from the request
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
+        $days = $request->days;
+
+        $salesQuery = Invoice::query();
+        $salaryQuery = Salary::query();
+        $costQuery = Cost::query();
+        $stockQuery = StockInOut::query();
+
+        if ($fromDate && $toDate) {
+            $start = Carbon::parse($fromDate)->startOfDay();
+            $end = Carbon::parse($toDate)->endOfDay();
+
+            $salesQuery->whereBetween('sale_date', [$start, $end]);
+            $salaryQuery->whereBetween('month_year', [$start, $end]);
+            $costQuery->whereBetween('cost_date', [$start, $end]);
+            $stockQuery->whereBetween('in_out_date', [$start, $end]);
+        } elseif ($days) {
+            $start = Carbon::now()->subDays($days)->startOfDay();
+            $end = Carbon::now()->endOfDay();
+
+            $salesQuery->whereBetween('sale_date', [$start, $end]);
+            $salaryQuery->whereBetween('month_year', [$start, $end]);
+            $costQuery->whereBetween('cost_date', [$start, $end]);
+            $stockQuery->whereBetween('in_out_date', [$start, $end]);
+        }
 
         // 1. Calculate Total Sales (Revenue)
-        $sales = Invoice::whereBetween('sale_date', [$fromDate, $toDate])
-            ->sum('grand_total');
-
-        $dues = Invoice::whereBetween('sale_date', [$fromDate, $toDate])
-            ->sum('due');
+        $sales = $salesQuery->sum('grand_total');
+        $dues = (clone $salesQuery)->sum('due');
 
         // 2. Calculate Total COGS (Cost of Goods Sold)
-        $cogs = StockInOut::whereBetween('in_out_date', [$fromDate, $toDate])
-            ->sum(DB::raw('quantity * buy_price'));
+        $cogs = $stockQuery->sum(DB::raw('quantity * buy_price'));
 
         // 3. Calculate Operating Expenses (Salary, Costs, etc.)
-        $salaries = Salary::whereBetween('month_year', [$fromDate, $toDate])
-            ->sum('paid_amount');
-
-        $costs = Cost::whereBetween('cost_date', [$fromDate, $toDate])
-            ->sum('amount');
+        $salaries = $salaryQuery->sum('paid_amount');
+        $costs = $costQuery->sum('amount');
 
         // 4. Calculate Net Profit (Total Revenue - Total COGS - Operating Expenses)
         $netProfit = $sales - $dues - $cogs - $salaries - $costs;
