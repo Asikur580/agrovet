@@ -6,7 +6,9 @@ use Exception;
 use App\Models\Order;
 use App\Models\Invoice;
 use App\Models\Product;
+use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\Payment;
 use App\Models\Relation;
 use Illuminate\Http\Request;
 use App\Models\InvoiceProduct;
@@ -126,7 +128,7 @@ class InvoiceController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve customers',
-                'error' =>  $e->getMessage()
+                'error' => $e->getMessage()
             ]);
         }
     }
@@ -215,9 +217,32 @@ class InvoiceController extends Controller
             if ($orderId == null && $credit_limit > $employeeCreditLimit) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Invoice exceeds your credit limit.',
+                    'message' => 'Invoice exceeds employee credit limit.',
                     'data' => null
                 ]);
+            }
+
+            // Customer Credit Limit check
+            $customer = Customer::findOrFail($validatedInvoice['cust_id']);
+            $customerCreditLimit = $customer->credit_limit;
+
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
+
+            $custPendingOrderAmount = Order::where('cust_id', $customer->id)
+                ->where('status', 'pending')
+                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+
+            $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $validatedInvoice['grand_total'];
+
+            if ($custCreditUsage > $customerCreditLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice exceeds customer credit limit.',
+                    'data' => null
+                ], 422);
             }
 
             // Get latest invoice for the specific customer
@@ -400,8 +425,33 @@ class InvoiceController extends Controller
             if ($credit_limit > $employeeCreditLimit) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Invoice exceeds your credit limit.',
+                    'message' => 'Invoice exceeds employee credit limit.',
                 ]);
+            }
+
+            // Customer Credit Limit check
+            $customer = Customer::findOrFail($validatedInvoice['cust_id']);
+            $customerCreditLimit = $customer->credit_limit;
+
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
+
+            $custPendingOrderAmount = Order::where('cust_id', $customer->id)
+                ->where('status', 'pending')
+                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+
+            // Adjust total purchase by removing old grand total and adding new grand total
+            $newCustTotalPurchase = $custTotalPurchase - $invoice->grand_total + $validatedInvoice['grand_total'];
+            $custCurrentDue = ($customer->old_due + $newCustTotalPurchase) - $custTotalPayment;
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
+
+            if ($custCreditUsage > $customerCreditLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Updated invoice exceeds customer credit limit.',
+                    'data' => null
+                ], 422);
             }
 
             // Restore stock for removed products
@@ -516,7 +566,7 @@ class InvoiceController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Invoice marked as printed',
-                'data' => null,
+            'data' => null,
         ]);
     }
 }

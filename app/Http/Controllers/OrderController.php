@@ -7,7 +7,8 @@ use Throwable;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Invoice;
-use App\Models\Product;
+use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\Employee;
 use App\Models\Relation;
 use App\Models\OrderProduct;
@@ -156,27 +157,51 @@ class OrderController extends Controller
             if ($creditLimitUsage > $employee->credit_limit) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Order exceeds your credit limit.',
+                    'message' => 'Order exceeds employee credit limit.',
+                    'data' => null
+                ], 422);
+            }
+
+            // Customer Credit Limit check
+            $customer = Customer::findOrFail($validated['cust_id']);
+            $customerCreditLimit = $customer->credit_limit;
+
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
+
+            $custPendingOrderAmount = OrderProduct::whereHas(
+                'order',
+                fn($q) => $q->where('cust_id', $customer->id)->where('status', 'pending')
+            )->join('products', 'order_products.product_id', '=', 'products.id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+
+            $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $newTotalOrderAmount;
+
+            if ($custCreditUsage > $customerCreditLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Order exceeds customer credit limit.',
                     'data' => null
                 ], 422);
             }
 
             // Create order
             $order = Order::create([
-                'cust_id'     => $validated['cust_id'],
+                'cust_id' => $validated['cust_id'],
                 'employee_id' => $employee->id,
-                'discount'    => $validated['discount'] ?? 0,
+                'discount' => $validated['discount'] ?? 0,
                 'order_date' => $validated['order_date'],
-                'order_type'  => $validated['order_type'],
+                'order_type' => $validated['order_type'],
             ]);
 
             // Bulk insert products
             $orderProducts = collect($validated['products'])->map(fn($p) => [
-                'order_id'   => $order->id,
+                'order_id' => $order->id,
                 'product_id' => $p['product_id'],
-                'quantity'   => $p['quantity'],
+                'quantity' => $p['quantity'],
                 'unit_price' => $p['unit_price'],
-                'bonus_qty'  => $p['bonus_qty'] ?? 0,
+                'bonus_qty' => $p['bonus_qty'] ?? 0,
                 'price_type' => $p['price_type'],
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -319,9 +344,35 @@ class OrderController extends Controller
             if ($credit_limit > $employeeCreditLimit) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Updated order exceeds your credit limit.',
+                    'message' => 'Updated order exceeds employee credit limit.',
                     'data' => null
-                ]);
+                ], 422);
+            }
+
+            // Customer Credit Limit check
+            $customer = Customer::findOrFail($validated['cust_id']);
+            $customerCreditLimit = $customer->credit_limit;
+
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
+
+            $custPendingOrderAmount = OrderProduct::whereHas(
+                'order',
+                fn($q) => $q->where('cust_id', $customer->id)
+                    ->where('status', 'pending')
+                    ->where('id', '!=', $id) // Exclude current order
+            )->join('products', 'order_products.product_id', '=', 'products.id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+
+            $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $updatedOrderAmount;
+
+            if ($custCreditUsage > $customerCreditLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Updated order exceeds customer credit limit.',
+                    'data' => null
+                ], 422);
             }
 
             // Update order info
@@ -408,9 +459,9 @@ class OrderController extends Controller
         $order->save();
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Order status changed from ' . $old . ' to ' . $order->status . ' successfully.',
-            'data'    => null,
+            'data' => null,
         ]);
     }
 }

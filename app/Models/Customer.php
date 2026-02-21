@@ -15,7 +15,10 @@ class Customer extends Model
         'proprietor_name',
         'phone',
         'address',
-        'image',       
+        'image',
+        'credit_limit',
+        'purchase',
+        'payment',
         'old_due',
     ];
 
@@ -30,12 +33,12 @@ class Customer extends Model
     {
         return $this->hasMany(Invoice::class, 'cust_id'); // The foreign key is 'cust_id' in the invoices table
     }
-    
+
     // Define the relationship with Employee
-     public function employee()
-     {
-         return $this->belongsTo(Employee::class);
-     }
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 
     public function payments()
     {

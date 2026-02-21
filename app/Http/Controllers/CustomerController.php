@@ -11,53 +11,53 @@ use Illuminate\Http\Request;
 class CustomerController extends Controller
 {
     public function index(Request $request)
-{
-    try {
-        $user = $request->user(); // logged-in user
+    {
+        try {
+            $user = $request->user(); // logged-in user
 
-        $customersQuery = Customer::with('employee:id,name');
+            $customersQuery = Customer::with('employee:id,name');
 
-        if ($user->employee->designation->slug == 'admin') {
-            // Admin সব customer দেখবে
-            $customers = $customersQuery->get();
-        } elseif ($user->employee->designation->slug == 'officer') {
-            // Officer শুধু নিজের customer
-            $customers = $customersQuery->where('employee_id', $user->employee->id)->get();
-        
-        } elseif ($user->employee->designation->slug == 'manager') {
-            // Manager এর under থাকা officer এর customer
-            $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-            $customers = $customersQuery->whereIn('employee_id', $officerIds)->get();
-        } elseif ($user->employee->designation->slug == 'rsm') {
-            // RS এর under থাকা manager + তাদের officer এর customer
-            $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-            $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
-            $allEmployeeIds = $managerIds->merge($officerIds);
-            $customers = $customersQuery->whereIn('employee_id', $allEmployeeIds)->get();
-        } else {
-            // অন্য কেউ দেখবে না
-            $customers = collect();
+            if ($user->employee->designation->slug == 'admin') {
+                // Admin সব customer দেখবে
+                $customers = $customersQuery->get();
+            } elseif ($user->employee->designation->slug == 'officer') {
+                // Officer শুধু নিজের customer
+                $customers = $customersQuery->where('employee_id', $user->employee->id)->get();
+
+            } elseif ($user->employee->designation->slug == 'manager') {
+                // Manager এর under থাকা officer এর customer
+                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $customers = $customersQuery->whereIn('employee_id', $officerIds)->get();
+            } elseif ($user->employee->designation->slug == 'rsm') {
+                // RS এর under থাকা manager + তাদের officer এর customer
+                $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allEmployeeIds = $managerIds->merge($officerIds);
+                $customers = $customersQuery->whereIn('employee_id', $allEmployeeIds)->get();
+            } else {
+                // অন্য কেউ দেখবে না
+                $customers = collect();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Customers retrieved successfully',
+                'data' => $customers,
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve customers',
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Customers retrieved successfully',
-            'data' => $customers,
-        ]);
-
-    } catch (Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Failed to retrieve customers',
-            'error' => $e->getMessage(),
-        ]);
     }
-}
-    
+
     public function customerByEmployee($id)
     {
         try {
-            $customers = Customer::where('employee_id',$id)->get();
+            $customers = Customer::where('employee_id', $id)->get();
 
             return response()->json([
                 'status' => true,
@@ -68,11 +68,11 @@ class CustomerController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve customers',
-                'error' =>  $e->getMessage()
+                'error' => $e->getMessage()
             ]);
         }
     }
-    
+
     public function store(Request $request)
     {
         try {
@@ -82,7 +82,9 @@ class CustomerController extends Controller
                 'customer_name' => 'required|string|max:255',
                 'proprietor_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:255'
+                'address' => 'required|string|max:255',
+                'credit_limit' => 'nullable|numeric|min:0',
+                'old_due' => 'nullable|numeric|min:0',
             ]);
 
 
@@ -111,18 +113,18 @@ class CustomerController extends Controller
                 $validatedData['image'] = $imagePath;
             }
 
-             $latestCustomer = Customer::orderBy('id', 'desc')->first();
+            $latestCustomer = Customer::orderBy('id', 'desc')->first();
 
-             $prefix = 'RA18/000';
-             $number = 1;
+            $prefix = 'RA18/000';
+            $number = 1;
 
-             if ($latestCustomer && $latestCustomer->customer_id) {
+            if ($latestCustomer && $latestCustomer->customer_id) {
                 // customer_id example: RA18/000123
                 $numberPart = str_replace($prefix, '', $latestCustomer->customer_id);
                 $number = ((int) $numberPart) + 1;
-             }
+            }
 
-             $validatedData['customer_id'] = $prefix . $number;
+            $validatedData['customer_id'] = $prefix . $number;
 
             // Create the customer
             $customer = Customer::create($validatedData);
@@ -168,7 +170,8 @@ class CustomerController extends Controller
                 'proprietor_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20', // Exclude the current record
                 'address' => 'required|string|max:255',
-                'old_due' => 'required|numeric|min:0'
+                'old_due' => 'required|numeric|min:0',
+                'credit_limit' => 'required|numeric|min:0',
             ]);
 
             // Fetch the employee and their designation
