@@ -176,16 +176,27 @@ class EmployeeController extends Controller
             $employees = Employee::where('status', 'active')->get();
 
             $report = $employees->map(function ($employee) use ($fromDate, $toDate) {
-                // Total due from invoices
-                $invoiceQuery = DB::table('invoices')
-                    ->where('employee_id', $employee->id)
-                    ->where('sale_type', 'credit');
+                // Total credit purchase from invoices
+                $purchaseQuery = DB::table('invoices')
+                    ->where('employee_id', $employee->id);
 
                 if ($fromDate && $toDate) {
-                    $invoiceQuery->whereBetween('sale_date', [$fromDate, $toDate]);
+                    $purchaseQuery->whereBetween('sale_date', [$fromDate, $toDate]);
                 }
 
-                $creditUseFromInvoices = $invoiceQuery->sum('due');
+                $totalCreditPurchase = $purchaseQuery->sum('grand_total');
+
+                // Total payment
+                $paymentQuery = DB::table('payments')
+                    ->where('employee_id', $employee->id);
+
+                if ($fromDate && $toDate) {
+                    $paymentQuery->whereBetween('payment_date', [$fromDate, $toDate]);
+                }
+
+                $totalPayment = $paymentQuery->sum('amount');
+
+                $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
 
                 // Total amount from pending orders (not yet invoiced)
                 $orderQuery = DB::table('orders')
