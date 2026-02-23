@@ -227,10 +227,12 @@ class EmployeeController extends Controller
                 return [
                     'id' => $employee->id,
                     'employee_name' => $employee->name,
-                    'credit_limit' => number_format($creditLimit, 2),
-                    'credit_use' => number_format($creditUse, 2),
-                    'credit_due' => number_format($creditDue, 2),
-                    'total_sale' => number_format($totalSale, 2),
+                    'credit_limit' => number_format($creditLimit, 2, '.', ''),
+                    'total_purchase' => number_format($totalCreditPurchase, 2, '.', ''),
+                    'total_payment' => number_format($totalPayment, 2, '.', ''),
+                    'total_due' => number_format($totalCreditPurchase - $totalPayment, 2, '.', ''),
+                    'credit_use' => number_format($creditUse, 2, '.', ''),
+                    'credit_due' => number_format($creditDue, 2, '.', ''),
                 ];
             });
 

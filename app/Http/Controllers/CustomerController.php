@@ -15,7 +15,9 @@ class CustomerController extends Controller
         try {
             $user = $request->user(); // logged-in user
 
-            $customersQuery = Customer::with('employee:id,name');
+            $customersQuery = Customer::with('employee:id,name')
+                ->withSum('invoices as total_purchases', 'grand_total')
+                ->withSum('payments as total_payments', 'amount');
 
             if ($user->employee->designation->slug == 'admin') {
                 // Admin সব customer দেখবে
@@ -38,6 +40,12 @@ class CustomerController extends Controller
                 // অন্য কেউ দেখবে না
                 $customers = collect();
             }
+
+            // Calculate due for each customer
+            $customers = $customers->map(function ($customer) {
+                $customer->due = (($customer->old_due ?? 0) + ($customer->total_purchases ?? 0)) - ($customer->total_payments ?? 0);
+                return $customer;
+            });
 
             return response()->json([
                 'status' => true,
