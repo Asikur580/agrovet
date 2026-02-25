@@ -211,7 +211,7 @@ class InvoiceController extends Controller
                 ->join('order_products', 'orders.id', '=', 'order_products.order_id')
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
-            $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
+            $credit_limit = $totalDue + $totalOrderAmount;
 
 
             if ($orderId == null && $credit_limit > $employeeCreditLimit) {
@@ -235,7 +235,7 @@ class InvoiceController extends Controller
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
-            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $validatedInvoice['grand_total'];
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
 
             if ($custCreditUsage > $customerCreditLimit) {
                 return response()->json([
