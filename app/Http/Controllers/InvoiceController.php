@@ -203,24 +203,24 @@ class InvoiceController extends Controller
             $validatedInvoice['employee_id'] = $request->user()->employee_id;
 
             // Check credit limit for the order (before creating the invoice)
-            $employee = Employee::find($validatedInvoice['employee_id']);
-            $employeeCreditLimit = $employee->credit_limit;
+             $employee = Employee::find($validatedInvoice['employee_id']);
+            // $employeeCreditLimit = $employee->credit_limit;
 
-            $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
-            $totalOrderAmount = Order::where('employee_id', $employee->id)
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            // $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
+            // $totalOrderAmount = Order::where('employee_id', $employee->id)
+            //     ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+            //     ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
-            $credit_limit = $totalDue + $totalOrderAmount;
+            // $credit_limit = $totalDue + $totalOrderAmount;
 
 
-            if ($orderId == null && $credit_limit > $employeeCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invoice exceeds employee credit limit.',
-                    'data' => null
-                ]);
-            }
+            // if ($orderId == null && $credit_limit > $employeeCreditLimit) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => 'Invoice exceeds employee credit limit.',
+            //         'data' => null
+            //     ]);
+            // }
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
@@ -415,19 +415,19 @@ class InvoiceController extends Controller
 
             // Get employee credit limit
             $employee = Employee::find($validatedInvoice['employee_id']);
-            $employeeCreditLimit = $employee->credit_limit;
-            $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
-            $totalOrderAmount = Order::where('employee_id', $employee->id)
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            // $employeeCreditLimit = $employee->credit_limit;
+            // $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
+            // $totalOrderAmount = Order::where('employee_id', $employee->id)
+            //     ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+            //     ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
-            $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
-            if ($credit_limit > $employeeCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invoice exceeds employee credit limit.',
-                ]);
-            }
+            // $credit_limit = $totalDue + $totalOrderAmount;
+            // if ($credit_limit > $employeeCreditLimit) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => 'Invoice exceeds employee credit limit.',
+            //     ]);
+            // }
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
