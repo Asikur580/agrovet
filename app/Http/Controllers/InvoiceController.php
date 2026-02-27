@@ -203,7 +203,7 @@ class InvoiceController extends Controller
             $validatedInvoice['employee_id'] = $request->user()->employee_id;
 
             // Check credit limit for the order (before creating the invoice)
-             $employee = Employee::find($validatedInvoice['employee_id']);
+            $employee = Employee::find($validatedInvoice['employee_id']);
             // $employeeCreditLimit = $employee->credit_limit;
 
             // $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
@@ -222,6 +222,7 @@ class InvoiceController extends Controller
             //     ]);
             // }
 
+
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
             $customerCreditLimit = $customer->credit_limit;
@@ -235,14 +236,17 @@ class InvoiceController extends Controller
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
-            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
+            $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $validatedInvoice['grand_total'];
+            ;
 
-            if ($custCreditUsage > $customerCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invoice exceeds customer credit limit.',
-                    'data' => null
-                ], 422);
+            if ($validatedInvoice['sale_type'] == 'credit') {
+                if ($custCreditUsage > $customerCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invoice exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Get latest invoice for the specific customer
@@ -446,12 +450,14 @@ class InvoiceController extends Controller
             $custCurrentDue = ($customer->old_due + $newCustTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
 
-            if ($custCreditUsage > $customerCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Updated invoice exceeds customer credit limit.',
-                    'data' => null
-                ], 422);
+            if ($validatedInvoice['sale_type'] == 'credit') {
+                if ($custCreditUsage > $customerCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Updated invoice exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Restore stock for removed products

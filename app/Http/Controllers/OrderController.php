@@ -178,14 +178,15 @@ class OrderController extends Controller
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $newTotalOrderAmount;
 
-            if ($custCreditUsage > $customerCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Order exceeds customer credit limit.',
-                    'data' => null
-                ], 422);
+            if($validated['order_type'] == 'credit'){
+                if ($custCreditUsage > $customerCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Order exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
-
             // Create order
             $order = Order::create([
                 'cust_id' => $validated['cust_id'],
@@ -367,12 +368,14 @@ class OrderController extends Controller
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $updatedOrderAmount;
 
-            if ($custCreditUsage > $customerCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Updated order exceeds customer credit limit.',
+            if($validated['order_type'] == 'credit'){
+                if ($custCreditUsage > $customerCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Updated order exceeds customer credit limit.',
                     'data' => null
-                ], 422);
+                ], 422);            
+                }
             }
 
             // Update order info
