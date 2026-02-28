@@ -237,17 +237,6 @@ class InvoiceController extends Controller
 
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $validatedInvoice['grand_total'];
-            ;
-
-            if ($validatedInvoice['sale_type'] == 'credit') {
-                if ($custCreditUsage > $customerCreditLimit) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Invoice exceeds customer credit limit.',
-                        'data' => null
-                    ], 422);
-                }
-            }
 
             // Get latest invoice for the specific customer
             $latestInvoice = Invoice::where('cust_id', $validatedInvoice['cust_id'])
@@ -275,6 +264,8 @@ class InvoiceController extends Controller
                 // Find the order or throw a ModelNotFoundException
                 $order = Order::findOrFail($orderId);
 
+                $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
+
                 // Add the employee ID from the order table
                 $validatedInvoice['employee_id'] = $order->employee_id;
 
@@ -283,6 +274,17 @@ class InvoiceController extends Controller
 
                 // Delete the order itself
                 $order->delete();
+            }
+
+
+             if ($validatedInvoice['sale_type'] == 'credit') {
+                if ($custCreditUsage > $customerCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invoice exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Create the invoice
