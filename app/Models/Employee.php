@@ -56,5 +56,56 @@ class Employee extends Model
         return $this->hasMany(Salary::class);
     }
 
-   
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    /**
+     * Get subordinate employees (employees where relation_id = this employee's id)
+     * Manager -> Officers, RSM -> Managers
+     */
+    public function subordinates()
+    {
+        return $this->hasManyThrough(
+            Employee::class,
+            Relation::class,
+            'relation_id',  // Foreign key on relations table (superior)
+            'id',           // Foreign key on employees table
+            'id',           // Local key on employees table
+            'employee_id'   // Local key on relations table (subordinate)
+        );
+    }
+
+    /**
+     * Recalculate credit_limit and cascade up the hierarchy
+     * 
+     * Officer: credit_limit = SUM(customers' credit_limit)
+     * Manager: credit_limit = SUM(officers' credit_limit)
+     * RSM:     credit_limit = SUM(managers' credit_limit)
+     */
+    public function recalculateCreditLimit()
+    {
+        $designation = $this->designation ? $this->designation->slug : null;
+
+        if ($designation === 'officer') {
+            // Officer's credit_limit = SUM of their customers' credit_limit
+            $this->credit_limit = $this->customers()->sum('credit_limit');
+        } elseif ($designation === 'manager' || $designation === 'rsm') {
+            // Manager/RSM's credit_limit = SUM of subordinate employees' credit_limit
+            $subordinateIds = Relation::where('relation_id', $this->id)->pluck('employee_id');
+            $this->credit_limit = Employee::whereIn('id', $subordinateIds)->sum('credit_limit');
+        }
+
+        $this->save();
+
+        // Cascade up: find the superior and recalculate their credit_limit too
+        $superiorRelation = Relation::where('employee_id', $this->id)->first();
+        if ($superiorRelation) {
+            $superior = Employee::with('designation')->find($superiorRelation->relation_id);
+            if ($superior) {
+                $superior->recalculateCreditLimit();
+            }
+        }
+    }
 }

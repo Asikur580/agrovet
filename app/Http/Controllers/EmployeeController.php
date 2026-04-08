@@ -38,7 +38,6 @@ class EmployeeController extends Controller
                 'district' => 'required|string|max:255',
                 'national_id' => 'nullable|string',
                 'blood_group' => 'nullable|string',
-                'credit_limit' => 'nullable|numeric',
                 'basic_salary' => 'nullable|numeric',
             ]);
 
@@ -58,6 +57,7 @@ class EmployeeController extends Controller
 
             // dd($request->user()->id);
             $validatedEmployeeData['created_by'] = $request->user()->id;
+            $validatedEmployeeData['credit_limit'] = 0; // Credit limit is auto-calculated from customers
 
             // Create the employee
             $employee = Employee::create($validatedEmployeeData);
@@ -105,7 +105,6 @@ class EmployeeController extends Controller
                 'district' => 'required|string|max:255',
                 'national_id' => 'nullable|string',
                 'blood_group' => 'nullable|string',
-                'credit_limit' => 'nullable|numeric',
                 'basic_salary' => 'nullable|numeric',
             ]);
 

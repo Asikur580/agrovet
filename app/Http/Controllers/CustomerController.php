@@ -137,6 +137,9 @@ class CustomerController extends Controller
             // Create the customer
             $customer = Customer::create($validatedData);
 
+            // Recalculate employee credit limit
+            $employee->recalculateCreditLimit();
+
             return response()->json([
                 'status' => true,
                 'message' => 'Customer created successfully',
@@ -195,6 +198,7 @@ class CustomerController extends Controller
 
             // Find the customer by ID
             $customer = Customer::findOrFail($id);
+            $oldEmployeeId = $customer->employee_id;
 
             // Handle the image upload if provided
             if ($request->hasFile('image')) {
@@ -218,6 +222,17 @@ class CustomerController extends Controller
             // Update the customer with the validated data
             $customer->update($validatedData);
 
+            // Recalculate new employee's credit limit
+            $employee->recalculateCreditLimit();
+
+            // If employee changed, recalculate old employee's credit limit too
+            if ($oldEmployeeId != $validatedData['employee_id']) {
+                $oldEmployee = Employee::find($oldEmployeeId);
+                if ($oldEmployee) {
+                    $oldEmployee->recalculateCreditLimit();
+                }
+            }
+
             // Return a successful response
             return response()->json([
                 'status' => true,
@@ -236,11 +251,19 @@ class CustomerController extends Controller
     {
         try {
             $customer = Customer::findOrFail($id);
+            $employeeId = $customer->employee_id;
+
             // Delete the old image if it exists
             if ($customer->image && file_exists(storage_path('app/public/' . $customer->image))) {
                 unlink(storage_path('app/public/' . $customer->image));
             }
             $customer->delete();
+
+            // Recalculate employee credit limit after customer deletion
+            $employee = Employee::find($employeeId);
+            if ($employee) {
+                $employee->recalculateCreditLimit();
+            }
 
             return response()->json([
                 'status' => true,

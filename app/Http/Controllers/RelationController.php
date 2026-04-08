@@ -73,7 +73,9 @@ class RelationController extends Controller
             // Check if a relation already exists for the given employee_id
             $relations = Relation::where('employee_id', $validatedData['employee_id'])->first();
 
+            $oldRelationId = null;
             if ($relations) {
+                $oldRelationId = $relations->relation_id;
                 // Update the existing relation
                 $relations->update($validatedData);
                 $message = 'Relation updated successfully';
@@ -81,6 +83,20 @@ class RelationController extends Controller
                 // Create a new relation
                 $relations = Relation::create($validatedData);
                 $message = 'Relation created successfully';
+            }
+
+            // Recalculate new superior's credit limit
+            $newSuperior = Employee::with('designation')->find($validatedData['relation_id']);
+            if ($newSuperior) {
+                $newSuperior->recalculateCreditLimit();
+            }
+
+            // If relation changed, recalculate old superior's credit limit too
+            if ($oldRelationId && $oldRelationId != $validatedData['relation_id']) {
+                $oldSuperior = Employee::with('designation')->find($oldRelationId);
+                if ($oldSuperior) {
+                    $oldSuperior->recalculateCreditLimit();
+                }
             }
 
             // Create the relation

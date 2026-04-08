@@ -798,6 +798,7 @@ class ReportController extends Controller
         $salaryQuery = Salary::query();
         $costQuery = Cost::query();
         $stockQuery = StockInOut::query();
+        $paymentQuery = Payment::query();
 
         if ($fromDate && $toDate) {
             $start = Carbon::parse($fromDate)->startOfDay();
@@ -807,6 +808,7 @@ class ReportController extends Controller
             $salaryQuery->whereBetween('month_year', [$start, $end]);
             $costQuery->whereBetween('cost_date', [$start, $end]);
             $stockQuery->whereBetween('in_out_date', [$start, $end]);
+            $paymentQuery->whereBetween('payment_date', [$start, $end]);
         } elseif ($days) {
             $start = Carbon::now()->subDays($days)->startOfDay();
             $end = Carbon::now()->endOfDay();
@@ -815,26 +817,30 @@ class ReportController extends Controller
             $salaryQuery->whereBetween('month_year', [$start, $end]);
             $costQuery->whereBetween('cost_date', [$start, $end]);
             $stockQuery->whereBetween('in_out_date', [$start, $end]);
+            $paymentQuery->whereBetween('payment_date', [$start, $end]);
         }
 
-        // 1. Calculate Total Sales (Revenue)
-        $sales = $salesQuery->sum('grand_total');
-        $dues = (clone $salesQuery)->sum('due');
+        // 1. Calculate Total Revenue (Total Sales)
+        $totalRevenue = $salesQuery->sum('grand_total');
+        $customerPayments = $paymentQuery->whereNull('supplier_id')->sum('amount');
+        $supplierPayments = $paymentQuery->whereNull('customer_id')->sum('amount');
 
         // 2. Calculate Total COGS (Cost of Goods Sold)
-        $cogs = $stockQuery->sum(DB::raw('quantity * buy_price'));
+        // Only sum quantities for stock that went OUT
+        $cogs = $stockQuery->where('in_out', 'out')->sum(DB::raw('quantity * buy_price'));
 
         // 3. Calculate Operating Expenses (Salary, Costs, etc.)
         $salaries = $salaryQuery->sum('paid_amount');
         $costs = $costQuery->sum('amount');
 
         // 4. Calculate Net Profit (Total Revenue - Total COGS - Operating Expenses)
-        $netProfit = $sales - $dues - $cogs - $salaries - $costs;
+        $netProfit = $totalRevenue - $cogs - $salaries - $costs;
 
         // Return the result in JSON
         return response()->json([
-            'sales' => $sales,
-            'dues' => $dues,
+            'totalRevenue' => $totalRevenue,
+            'customerPayments' => $customerPayments,
+            'supplierPayments' => $supplierPayments,
             'cogs' => $cogs,
             'salaries' => $salaries,
             'costs' => $costs,
