@@ -22,7 +22,8 @@ class Invoice extends Model
         'sale_date',
         'sale_type',
         'is_printed',
-        'printed_at'     
+        'printed_at',
+        'offer'
     ];
 
     public function customer()

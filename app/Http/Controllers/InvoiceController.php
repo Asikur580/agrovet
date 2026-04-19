@@ -91,6 +91,7 @@ class InvoiceController extends Controller
                     }),
                     'invoice_date' => $invoice->sale_date,
                     'grand_total' => $invoice->grand_total,
+                    'offer' => $invoice->offer,
                     'is_printed' => $invoice->is_printed,
                     'printed_at' => $invoice->printed_at,
                     'created_at' => $invoice->created_at,
@@ -576,5 +577,31 @@ class InvoiceController extends Controller
             'message' => 'Invoice marked as printed',
             'data' => null,
         ]);
+    }
+
+    public function updateOffer(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'offer' => 'nullable|string|max:255',
+            ]);
+
+            $invoice = Invoice::findOrFail($id);
+            $invoice->update([
+                'offer' => $request->offer,
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Offer updated successfully',
+                'data' => $invoice,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update offer: ' . $e->getMessage(),
+                'data' => null,
+            ]);
+        }
     }
 }
