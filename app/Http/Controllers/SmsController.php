@@ -25,6 +25,15 @@ class SmsController extends Controller
     public function sendCustomSms(Request $request)
     {
         try {
+            // Only admin can send custom SMS
+            $user = $request->user();
+            if (!$user || !optional($user->employee)->designation || $user->employee->designation->slug !== 'admin') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized. Only admins are allowed to send custom SMS.',
+                ], 403);
+            }
+
             $request->validate([
                 'customer_ids' => 'nullable|array',
                 'customer_ids.*' => 'exists:customers,id',

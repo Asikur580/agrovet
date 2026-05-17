@@ -203,7 +203,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/low_stock_alerts', [ReportController::class, 'lowStockAlerts']);
 
     // SMS Routes
-    Route::post('/send-custom-sms', [SmsController::class, 'sendCustomSms'])->name('sms.sendCustom');
+    Route::post('/send-custom-sms', [SmsController::class, 'sendCustomSms'])->middleware('throttle:3,1')->name('sms.sendCustom');
 });
 
 
