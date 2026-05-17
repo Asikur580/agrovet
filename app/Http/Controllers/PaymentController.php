@@ -9,9 +9,17 @@ use App\Models\Customer;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\SmsService;
 
 class PaymentController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     public function index()
     {
         try {
@@ -79,6 +87,20 @@ class PaymentController extends Controller
             // }
 
             DB::commit(); // সব ঠিক থাকলে ট্রানজেকশন কমিট করা
+
+            // Customer SMS notification
+            if ($payment->cust_id) {
+                $customer = Customer::find($payment->cust_id);
+                if ($customer && $customer->phone) {
+                    // Calculate current due
+                    $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+                    $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
+                    $currentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
+
+                    $message = "Dear Customer,\n{$customer->customer_name}\nYour payment of {$payment->amount} TK has been successfully received. Your current due: {$currentDue} TK. Thank you. - Radian Agrovet";
+                    $this->smsService->sendSms($customer->phone, $message);
+                }
+            }
 
             return response()->json([
                 'status' => true,

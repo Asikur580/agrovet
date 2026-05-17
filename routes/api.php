@@ -28,6 +28,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\CostCategoryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\EmployeeCostCategoryController;
+use App\Http\Controllers\SmsController;
 
 Route::post('/login', [UserController::class, 'login'])->name('user.login'); // Public Route
 
@@ -205,6 +206,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/next-payable-month-salary', [ReportController::class, 'nextMonthSalary']);
     Route::get('/dashboard-report', [ReportController::class, 'dashboardReport']);
     Route::get('/low_stock_alerts', [ReportController::class, 'lowStockAlerts']);
+
+    // SMS Routes
+    Route::post('/send-custom-sms', [SmsController::class, 'sendCustomSms'])->name('sms.sendCustom');
 });
 
 

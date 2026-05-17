@@ -16,9 +16,17 @@ use App\Mail\InvoiceCreatedMail;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\InvoiceNotification;
 use Illuminate\Support\Facades\Mail;
+use App\Services\SmsService;
 
 class InvoiceController extends Controller
 {
+    protected $smsService;
+
+    public function __construct(SmsService $smsService)
+    {
+        $this->smsService = $smsService;
+    }
+
     /**
      * Display a listing of the invoices.
      */
@@ -360,6 +368,12 @@ class InvoiceController extends Controller
 
             if ($managerEmail) {
                 Mail::to($managerEmail)->send(new InvoiceCreatedMail($invoice));
+            }
+
+            // Customer SMS notification
+            if ($customer && $customer->phone) {
+                $message = "Dear Customer,\n{$customer->customer_name}\nYour new invoice (ID: {$invoice->invoiceId}) has been created. Total Bill: {$invoice->grand_total} TK. Thank you for staying with us. - Radian Agrovet";
+                $this->smsService->sendSms($customer->phone, $message);
             }
 
 
