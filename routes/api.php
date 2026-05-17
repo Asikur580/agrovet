@@ -1,34 +1,29 @@
 <?php
 
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CostCategoryController;
+use App\Http\Controllers\CostController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DesignationController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeCostCategoryController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RelationController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SmsController;
+use App\Http\Controllers\SmsTemplateController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CostController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\BrandController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SalaryController;
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-
-use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\RelationController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\DesignationController;
-use App\Http\Controllers\CostCategoryController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\EmployeeCostCategoryController;
-use App\Http\Controllers\SmsController;
 
 Route::post('/login', [UserController::class, 'login'])->name('user.login'); // Public Route
 
@@ -230,4 +225,12 @@ Route::get('/customer-report/{customerId}', [ReportController::class, 'customerR
 // GET /api/due-invoices?days=90
 // GET /api/orders?customer_id=5&employee_id=12
 // GET /api/invoices?customer_id=10&employee_id=7
+
+// SMS Template Routes
+Route::get('/sms-templates', [SmsTemplateController::class, 'index']);
+Route::post('/sms-templates', [SmsTemplateController::class, 'store']);
+Route::get('/sms-templates/{id}', [SmsTemplateController::class, 'show']);
+Route::post('/sms-templates/{id}', [SmsTemplateController::class, 'update']);
+Route::delete('/sms-templates/{id}', [SmsTemplateController::class, 'destroy']);
+
 

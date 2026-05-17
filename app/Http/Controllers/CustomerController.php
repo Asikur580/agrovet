@@ -123,16 +123,23 @@ class CustomerController extends Controller
 
             $latestCustomer = Customer::orderBy('id', 'desc')->first();
 
-            $prefix = 'RA18/000';
-            $number = 1;
+            $startingNumber = 1;
 
             if ($latestCustomer && $latestCustomer->customer_id) {
-                // customer_id example: RA18/000123
-                $numberPart = str_replace($prefix, '', $latestCustomer->customer_id);
-                $number = ((int) $numberPart) + 1;
+                // Extract the part after the slash (e.g., "0001" from "RA18/0001")
+                $parts = explode('/', $latestCustomer->customer_id);
+                $numberPart = end($parts);
+                
+                // Keep only numeric characters just in case
+                $numericPart = preg_replace('/[^0-9]/', '', $numberPart);
+                
+                if (is_numeric($numericPart)) {
+                    $startingNumber = (int) $numericPart + 1;
+                }
             }
 
-            $validatedData['customer_id'] = $prefix . $number;
+            // Format with zero padding (e.g., RA18/0001, RA18/0015)
+            $validatedData['customer_id'] = 'RA18/' . str_pad($startingNumber, 4, '0', STR_PAD_LEFT);
 
             // Create the customer
             $customer = Customer::create($validatedData);
