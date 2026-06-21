@@ -15,12 +15,34 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+        $designation = $user->employee->designation->slug ?? null;
+        $employeeId = $user->employee->id ?? null;
 
-        $employees = Employee::with('designation', 'relations')->where('status', 'active')->get();
+        $query = Employee::with('designation', 'relations')->where('status', 'active');
+
+        if (!in_array($designation, ['admin', 'super_admin', 'developer'])) {
+            if ($designation === 'officer') {
+                $query->where('id', $employeeId);
+            } elseif ($designation === 'manager') {
+                $officerIds = DB::table('relations')->where('relation_id', $employeeId)->pluck('employee_id');
+                $allowedIds = $officerIds->push($employeeId);
+                $query->whereIn('id', $allowedIds);
+            } elseif ($designation === 'rsm') {
+                $managerIds = DB::table('relations')->where('relation_id', $employeeId)->pluck('employee_id');
+                $officerIds = DB::table('relations')->whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allowedIds = $managerIds->merge($officerIds)->push($employeeId);
+                $query->whereIn('id', $allowedIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $employees = $query->get();
 
         return response()->json([
             'status' => true,
-            'message' => 'All employees retrieved successfully',
+            'message' => 'Employees retrieved successfully',
             'data' => $employees,
         ]);
     }

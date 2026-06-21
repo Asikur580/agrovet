@@ -1406,4 +1406,229 @@ class ReportController extends Controller
     public function report($id)
     {
     }
+
+    /**
+     * Product-wise sales report with role-based access control.
+     *
+     * Officer: sees only their own product-wise sales
+     * Manager: sees sales of officers under them (can filter by employee_id)
+     * RSM: sees sales of all officers under their managers (can filter by employee_id)
+     * Admin: sees everything (can filter by employee_id)
+     *
+     * Query params: ?employee_id=5&from_date=2026-01-01&to_date=2026-06-21&days=30
+     */
+    public function productWiseSalesByRole(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $designation = $user->employee->designation->slug;
+
+            $fromDate = $request->from_date;
+            $toDate = $request->to_date;
+            $days = $request->days;
+            $filterEmployeeId = $request->employee_id;
+
+            // -----------------------------------------------
+            // Step 1: Determine allowed employee IDs based on role
+            // -----------------------------------------------
+            $allowedEmployeeIds = collect();
+
+            if (in_array($designation, ['admin', 'super_admin', 'developer'])) {
+                // Admin can see all — no restriction on employee IDs
+                if ($filterEmployeeId) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                }
+                // If no filter, $allowedEmployeeIds stays empty => no where clause applied
+
+            } elseif ($designation === 'officer') {
+                // Officer can only see their own sales
+                $allowedEmployeeIds = collect([$user->employee->id]);
+
+            } elseif ($designation === 'manager') {
+                // Manager sees themselves and officers under them
+                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $allowedEmployeeIds = $officerIds->push($user->employee->id);
+
+                if ($filterEmployeeId && $allowedEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                }
+
+            } elseif ($designation === 'rsm') {
+                // RSM sees themselves, managers, and officers under them
+                $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allEmployeeIds = $managerIds->merge($officerIds)->push($user->employee->id);
+
+                if ($filterEmployeeId && $allEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                } else {
+                    $allowedEmployeeIds = $allEmployeeIds;
+                }
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No sales data available for your role.',
+                    'data' => [],
+                ]);
+            }
+
+            // -----------------------------------------------
+            // Step 2: Build the product-wise sales query
+            // -----------------------------------------------
+            $query = Product::select(
+                'products.id',
+                'products.name as product_name',
+                'products.pack_size',
+                DB::raw('COUNT(DISTINCT invoices.id) as total_invoice'),
+                DB::raw('SUM(invoice_products.quantity + invoice_products.bonus_qty) as total_quantity'),
+                DB::raw('SUM(invoice_products.quantity * invoice_products.unit_price) as total_item_amount'),
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.discount
+                    ) as total_item_discount
+                '),
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.less
+                    ) as total_item_less
+                '),
+                DB::raw('
+                    SUM(
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
+                    ) as total_amount
+                ')
+            )
+                ->join('invoice_products', 'products.id', '=', 'invoice_products.product_id')
+                ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                ->groupBy('products.id', 'products.name', 'products.pack_size');
+
+            // Apply employee filter (role-based)
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $query->whereIn('invoices.employee_id', $allowedEmployeeIds);
+            }
+
+            // Apply date range filter
+            if ($fromDate && $toDate) {
+                $query->whereBetween('invoices.sale_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif ($days) {
+                $query->whereBetween('invoices.sale_date', [
+                    Carbon::now()->subDays($days)->startOfDay(),
+                    Carbon::now()->endOfDay()
+                ]);
+            }
+
+            $report = $query->orderByDesc('total_amount')->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Product wise sales report retrieved successfully',
+                'data' => $report
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve product wise sales report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function paymentHistoryByRole(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $designation = $user->employee->designation->slug ?? null;
+            $employeeId = $user->employee->id ?? null;
+
+            $fromDate = $request->from_date;
+            $toDate = $request->to_date;
+            $filterEmployeeId = $request->employee_id;
+
+            $allowedEmployeeIds = collect();
+
+            if (in_array($designation, ['admin', 'super_admin', 'developer'])) {
+                if ($filterEmployeeId) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                }
+            } elseif ($designation === 'officer') {
+                $allowedEmployeeIds = collect([$employeeId]);
+            } elseif ($designation === 'manager') {
+                $officerIds = DB::table('relations')->where('relation_id', $employeeId)->pluck('employee_id');
+                $allEmployeeIds = $officerIds->push($employeeId);
+                
+                if ($filterEmployeeId && $allEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                } else {
+                    $allowedEmployeeIds = $allEmployeeIds;
+                }
+            } elseif ($designation === 'rsm') {
+                $managerIds = DB::table('relations')->where('relation_id', $employeeId)->pluck('employee_id');
+                $officerIds = DB::table('relations')->whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allEmployeeIds = $managerIds->merge($officerIds)->push($employeeId);
+
+                if ($filterEmployeeId && $allEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                } else {
+                    $allowedEmployeeIds = $allEmployeeIds;
+                }
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No data available for your role.',
+                    'data' => []
+                ]);
+            }
+
+            $query = Employee::select('employees.id', 'employees.employee_id', 'employees.name')
+                ->join('payments', 'employees.id', '=', 'payments.employee_id')
+                ->whereNotNull('payments.cust_id') // Assuming we only care about customer payments collected by employees
+                ->selectRaw('SUM(payments.amount) as total_amount')
+                ->groupBy('employees.id', 'employees.employee_id', 'employees.name');
+
+            // Apply employee filter
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $query->whereIn('payments.employee_id', $allowedEmployeeIds);
+            } elseif (!in_array($designation, ['admin', 'super_admin', 'developer'])) {
+                $query->whereRaw('1 = 0');
+            }
+
+            if ($fromDate && $toDate) {
+                $query->whereBetween('payments.payment_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif ($request->days) {
+                $query->whereBetween('payments.payment_date', [
+                    Carbon::now()->subDays($request->days)->startOfDay(),
+                    Carbon::now()->endOfDay()
+                ]);
+            }
+
+            $report = $query->orderByDesc('total_amount')->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment history retrieved successfully',
+                'data' => $report
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve payment history',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

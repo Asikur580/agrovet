@@ -22,6 +22,7 @@ use App\Http\Controllers\SmsController;
 use App\Http\Controllers\SmsTemplateController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/userStore', [UserController::class, 'store'])->name('user.store');
     Route::post('/userUpdate/{id}', [UserController::class, 'update'])->name('user.update');
     Route::post('/userDelete/{id}', [UserController::class, 'delete'])->name('user.delete');
+
+    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.changePassword');
 
     // Relation Routes
     Route::get('/getOfficers', [RelationController::class, 'getOfficers'])->name('employee.officer');
@@ -134,6 +140,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('supplierReport/{id}', [ReportController::class, 'supplierReport'])->name('report.supplier');
     Route::get('dueInvoice', [ReportController::class, 'dueInvoice'])->name('report.dueInvoice');
     Route::get('cashCreditSale', [ReportController::class, 'cashCreditSale'])->name('report.cashCreditSale');
+    Route::get('product-wise-sales', [ReportController::class, 'productWiseSalesByRole'])->name('report.productWiseSalesByRole');
 
     // cost category 
     Route::get('costCategories', [CostCategoryController::class, 'index'])->name('costCategory.index');
@@ -204,6 +211,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // SMS Routes
     Route::post('/send-custom-sms', [SmsController::class, 'sendCustomSms'])->middleware('throttle:3,1')->name('sms.sendCustom');
+
+    // Reports
+    Route::get('/product-wise-sales', [ReportController::class, 'productWiseSalesByRole']);
+    Route::get('/payment-history-by-role', [ReportController::class, 'paymentHistoryByRole']);
+    Route::get('/customer-sales-report', [ReportController::class, 'generateSalesReport']);
 });
 
 
