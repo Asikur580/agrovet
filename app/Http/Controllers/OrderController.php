@@ -92,6 +92,7 @@ class OrderController extends Controller
                     'order_date' => $order->order_date,
                     'order_type' => $order->order_type,
                     'status' => $order->status,
+                    'offer' => $order->offer,
                     'created_at' => $order->created_at,
                     'updated_at' => $order->updated_at,
                 ];
@@ -123,6 +124,7 @@ class OrderController extends Controller
             'discount' => 'nullable|numeric',
             'order_date' => 'required|string',
             'order_type' => 'required|in:cash,credit',
+            'offer' => 'nullable|string|max:255',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
@@ -194,6 +196,7 @@ class OrderController extends Controller
                 'discount' => $validated['discount'] ?? 0,
                 'order_date' => $validated['order_date'],
                 'order_type' => $validated['order_type'],
+                'offer' => $validated['offer'] ?? null,
             ]);
 
             // Bulk insert products
@@ -308,6 +311,7 @@ class OrderController extends Controller
                 'discount' => 'nullable|numeric',
                 'order_date' => 'required|string',
                 'order_type' => 'required|in:cash,credit',
+                'offer' => 'nullable|string|max:255',
                 'products' => 'required|array',
                 'products.*.product_id' => 'required|exists:products,id',
                 'products.*.quantity' => 'required|integer|min:1',
@@ -384,6 +388,7 @@ class OrderController extends Controller
                 'discount' => $validated['discount'] ?? 0,
                 'order_date' => $validated['order_date'],
                 'order_type' => $validated['order_type'],
+                'offer' => $validated['offer'] ?? null,
             ]);
 
             // Remove old products and add updated products

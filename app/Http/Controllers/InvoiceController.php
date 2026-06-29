@@ -192,6 +192,7 @@ class InvoiceController extends Controller
                 'due' => 'required|numeric',
                 'sale_date' => 'required|string',
                 'sale_type' => 'required|in:cash,credit',
+                'offer' => 'nullable|string|max:255',
                 'products' => 'required|array', // Products data is required
                 'products.*.product_id' => 'required|exists:products,id', // Each product must exist
                 'products.*.quantity' => 'required|integer|min:1',
@@ -277,6 +278,11 @@ class InvoiceController extends Controller
 
                 // Add the employee ID from the order table
                 $validatedInvoice['employee_id'] = $order->employee_id;
+
+                // Copy offer from the order if not explicitly set in the request
+                if (empty($validatedInvoice['offer']) && !empty($order->offer)) {
+                    $validatedInvoice['offer'] = $order->offer;
+                }
 
                 // Delete associated order products
                 $order->orderProducts()->delete();
@@ -413,6 +419,7 @@ class InvoiceController extends Controller
                 'due' => 'required|numeric',
                 'sale_date' => 'required|string',
                 'sale_type' => 'required|in:cash,credit',
+                'offer' => 'nullable|string|max:255',
                 'products' => 'required|array',
                 'products.*.product_id' => 'required|exists:products,id',
                 'products.*.quantity' => 'required|integer|min:1',
