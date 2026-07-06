@@ -22,6 +22,20 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrderController extends Controller
 {
+    private function roundPointValue($value, int $min = 0): int
+    {
+        return max($min, (int) round((float) ($value ?? 0)));
+    }
+
+    private function normalizeProductQuantities(array $products): array
+    {
+        return collect($products)->map(function ($product) {
+            $product['quantity'] = $this->roundPointValue($product['quantity'] ?? 0);
+            $product['bonus_qty'] = $this->roundPointValue($product['bonus_qty'] ?? 0);
+
+            return $product;
+        })->toArray();
+    }
     /**
      * Display a listing of the orders.
      */
@@ -115,6 +129,27 @@ class OrderController extends Controller
 
 
     /**
+     * Calculate grand total with custom rounding (.50 rounds down, .51 rounds up)
+     */
+    private function calculateGrandTotal($products, $discountPercent = 0)
+    {
+        $rawTotal = collect($products)->sum(fn($p) => $p['unit_price'] * $p['quantity']);
+        $discountAmount = ($rawTotal * $discountPercent) / 100;
+        $rawGrandTotal = $rawTotal - $discountAmount;
+
+        // Custom rounding: x.50 -> x, x.51 -> x + 1
+        $formattedTotal = number_format($rawGrandTotal, 2, '.', '');
+        $parts = explode('.', $formattedTotal);
+        $integerPart = (int)$parts[0];
+        $decimalPart = (int)$parts[1];
+
+        if ($decimalPart > 50) {
+            return $integerPart + 1;
+        }
+        return $integerPart;
+    }
+
+    /**
      * Store a newly created order in storage.
      */
     public function store(Request $request)
@@ -127,11 +162,13 @@ class OrderController extends Controller
             'offer' => 'nullable|string|max:255',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
-            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.quantity' => 'required|numeric|min:0',
             'products.*.unit_price' => 'required|numeric|min:0',
             'products.*.bonus_qty' => 'nullable|numeric',
             'products.*.price_type' => 'required|in:tp,flat',
         ]);
+
+        $validated['products'] = $this->normalizeProductQuantities($validated['products']);
 
         $employee = $request->user()->employee;
 
@@ -151,8 +188,8 @@ class OrderController extends Controller
             // )->join('products', 'order_products.product_id', '=', 'products.id')
             //     ->sum(DB::raw('order_products.quantity * products.sell_price'));
 
-            $newTotalOrderAmount = collect($validated['products'])
-                ->sum(fn($p) => $p['unit_price'] * $p['quantity']);
+            $discount = $validated['discount'] ?? 0;
+            $newTotalOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
             // $creditLimitUsage = $totalDue + $totalOrderAmount + $newTotalOrderAmount;
 
@@ -314,11 +351,13 @@ class OrderController extends Controller
                 'offer' => 'nullable|string|max:255',
                 'products' => 'required|array',
                 'products.*.product_id' => 'required|exists:products,id',
-                'products.*.quantity' => 'required|integer|min:1',
+                'products.*.quantity' => 'required|numeric|min:0',
                 'products.*.unit_price' => 'required|numeric|min:0',
                 'products.*.bonus_qty' => 'nullable|numeric',
                 'products.*.price_type' => 'required|in:tp,flat',
             ]);
+
+            $validated['products'] = $this->normalizeProductQuantities($validated['products']);
 
             $employeeId = $request->user()->employee_id; // Retrieve the authenticated employee
             $employee = Employee::find($employeeId);
@@ -338,10 +377,8 @@ class OrderController extends Controller
 
 
             // Calculate the total amount for the updated order
-            $updatedOrderAmount = 0;
-            foreach ($request->products as $product) {
-                $updatedOrderAmount += $product['unit_price'] * $product['quantity'];
-            }
+            $discount = $validated['discount'] ?? 0;
+            $updatedOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
             // // Calculate the adjusted credit limit after the update
             // $credit_limit = $totalDue + $totalOrderAmount + $updatedOrderAmount;
@@ -393,7 +430,7 @@ class OrderController extends Controller
 
             // Remove old products and add updated products
             $order->products()->detach(); // Remove existing products
-            foreach ($request->products as $product) {
+            foreach ($validated['products'] as $product) {
                 $order->products()->attach($product['product_id'], [
                     'quantity' => $product['quantity'],
                     'unit_price' => $product['unit_price'],

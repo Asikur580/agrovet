@@ -20,11 +20,45 @@ use App\Services\SmsService;
 
 class InvoiceController extends Controller
 {
+    private function roundPointValue($value, int $min = 0): int
+    {
+        return max($min, (int) round((float) ($value ?? 0)));
+    }
+
+    private function normalizeProductQuantities(array $products): array
+    {
+        return collect($products)->map(function ($product) {
+            $product['quantity'] = $this->roundPointValue($product['quantity'] ?? 0);
+            $product['bonus_qty'] = $this->roundPointValue($product['bonus_qty'] ?? 0);
+            $product['due_quantity'] = $this->roundPointValue($product['due_quantity'] ?? 0);
+
+            return $product;
+        })->toArray();
+    }
     protected $smsService;
 
     public function __construct(SmsService $smsService)
     {
         $this->smsService = $smsService;
+    }
+
+    /**
+     * Calculate grand total with custom rounding (.50 rounds down, .51 rounds up)
+     */
+    private function calculateGrandTotal($totalPrice, $discount, $less)
+    {
+        $rawGrandTotal = $totalPrice - $discount - $less;
+
+        // Custom rounding: x.50 -> x, x.51 -> x + 1
+        $formattedTotal = number_format($rawGrandTotal, 2, '.', '');
+        $parts = explode('.', $formattedTotal);
+        $integerPart = (int)$parts[0];
+        $decimalPart = (int)$parts[1];
+
+        if ($decimalPart > 50) {
+            return $integerPart + 1;
+        }
+        return $integerPart;
     }
 
     /**
@@ -195,12 +229,22 @@ class InvoiceController extends Controller
                 'offer' => 'nullable|string|max:255',
                 'products' => 'required|array', // Products data is required
                 'products.*.product_id' => 'required|exists:products,id', // Each product must exist
-                'products.*.quantity' => 'required|integer|min:1',
+                'products.*.quantity' => 'required|numeric|min:0',
                 'products.*.unit_price' => 'required|numeric|min:0',
                 'products.*.bonus_qty' => 'nullable|numeric',
                 'products.*.price_type' => 'required|in:tp,flat',
             ]);
 
+            $validatedInvoice['products'] = $this->normalizeProductQuantities($validatedInvoice['products']);
+
+            // Recalculate grand_total and due using custom rounding logic
+            $calculatedGrandTotal = $this->calculateGrandTotal(
+                $validatedInvoice['total_price'],
+                $validatedInvoice['discount'] ?? 0,
+                $validatedInvoice['less'] ?? 0
+            );
+            $validatedInvoice['grand_total'] = $calculatedGrandTotal;
+            $validatedInvoice['due'] = $calculatedGrandTotal - $validatedInvoice['paid'];
 
             if ($validatedInvoice['paid'] > $validatedInvoice['grand_total']) {
                 return response()->json([
@@ -422,13 +466,23 @@ class InvoiceController extends Controller
                 'offer' => 'nullable|string|max:255',
                 'products' => 'required|array',
                 'products.*.product_id' => 'required|exists:products,id',
-                'products.*.quantity' => 'required|integer|min:1',
+                'products.*.quantity' => 'required|numeric|min:0',
                 'products.*.unit_price' => 'required|numeric|min:0',
                 'products.*.due_quantity' => 'nullable|numeric',
                 'products.*.bonus_qty' => 'nullable|numeric',
                 'products.*.price_type' => 'required|in:tp,flat',
             ]);
 
+            $validatedInvoice['products'] = $this->normalizeProductQuantities($validatedInvoice['products']);
+
+            // Recalculate grand_total and due using custom rounding logic
+            $calculatedGrandTotal = $this->calculateGrandTotal(
+                $validatedInvoice['total_price'],
+                $validatedInvoice['discount'] ?? 0,
+                $validatedInvoice['less'] ?? 0
+            );
+            $validatedInvoice['grand_total'] = $calculatedGrandTotal;
+            $validatedInvoice['due'] = $calculatedGrandTotal - $validatedInvoice['paid'];
 
             if ($validatedInvoice['paid'] > $validatedInvoice['grand_total']) {
                 return response()->json([
