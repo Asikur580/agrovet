@@ -1505,7 +1505,27 @@ class ReportController extends Controller
                             / (invoices.total_price + 1e-9)
                         ) * invoices.grand_total
                     ) as total_amount
-                ')
+                '),
+                DB::raw("
+                    SUM(
+                        CASE WHEN invoices.sale_type = 'cash' THEN
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
+                        ELSE 0 END
+                    ) as total_cash_sale
+                "),
+                DB::raw("
+                    SUM(
+                        CASE WHEN invoices.sale_type = 'credit' THEN
+                        (
+                            (invoice_products.quantity * invoice_products.unit_price)
+                            / (invoices.total_price + 1e-9)
+                        ) * invoices.grand_total
+                        ELSE 0 END
+                    ) as total_credit_sale
+                ")
             )
                 ->join('invoice_products', 'products.id', '=', 'invoice_products.product_id')
                 ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
