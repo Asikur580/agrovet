@@ -805,7 +805,7 @@ class ReportController extends Controller
             $end = Carbon::parse($toDate)->endOfDay();
 
             $salesQuery->whereBetween('sale_date', [$start, $end]);
-            $salaryQuery->whereBetween('month_year', [$start, $end]);
+            $salaryQuery->whereBetween('month_year', [$start->format('Y-m'), $end->format('Y-m')]);
             $costQuery->whereBetween('cost_date', [$start, $end]);
             $stockQuery->whereBetween('in_out_date', [$start, $end]);
             $paymentQuery->whereBetween('payment_date', [$start, $end]);
@@ -814,7 +814,7 @@ class ReportController extends Controller
             $end = Carbon::now()->endOfDay();
 
             $salesQuery->whereBetween('sale_date', [$start, $end]);
-            $salaryQuery->whereBetween('month_year', [$start, $end]);
+            $salaryQuery->whereBetween('month_year', [$start->format('Y-m'), $end->format('Y-m')]);
             $costQuery->whereBetween('cost_date', [$start, $end]);
             $stockQuery->whereBetween('in_out_date', [$start, $end]);
             $paymentQuery->whereBetween('payment_date', [$start, $end]);
@@ -822,29 +822,31 @@ class ReportController extends Controller
 
         // 1. Calculate Total Revenue (Total Sales)
         $totalRevenue = $salesQuery->sum('grand_total');
-        $customerPayments = $paymentQuery->whereNull('supplier_id')->sum('amount');
-        $supplierPayments = $paymentQuery->whereNull('customer_id')->sum('amount');
 
         // 2. Calculate Total COGS (Cost of Goods Sold)
         // Only sum quantities for stock that went OUT
-        $cogs = $stockQuery->where('in_out', 'out')->sum(DB::raw('quantity * buy_price'));
+        $cogs = $stockQuery->where('in_out', 'in')->sum(DB::raw('quantity * buy_price'));
 
         // 3. Calculate Operating Expenses (Salary, Costs, etc.)
         $salaries = $salaryQuery->sum('paid_amount');
-        $costs = $costQuery->sum('amount');
+        
+        $employeeAddCostQuery = clone $costQuery;
+        $employeeAddCosts = $employeeAddCostQuery->whereNotNull('employee_id')->sum('amount');
+        
+        $officeCostQuery = clone $costQuery;
+        $officeCosts = $officeCostQuery->whereNull('employee_id')->sum('amount');
 
         // 4. Calculate Net Profit (Total Revenue - Total COGS - Operating Expenses)
-        $netProfit = $totalRevenue - $cogs - $salaries - $costs;
+        $netProfit = $totalRevenue - $cogs - $salaries - $employeeAddCosts - $officeCosts;
 
         // Return the result in JSON
         return response()->json([
-            'totalRevenue' => $totalRevenue,
-            'customerPayments' => $customerPayments,
-            'supplierPayments' => $supplierPayments,
-            'cogs' => $cogs,
-            'salaries' => $salaries,
-            'costs' => $costs,
-            'net_profit' => $netProfit
+            'Product Sales' => $totalRevenue,
+            'Product Buy Price' => $cogs,
+            'Salary Cost' => $salaries,
+            'Employee Add Cost' => $employeeAddCosts,
+            'Office Cost' => $officeCosts,
+            'Net Profit / Loss' => $netProfit
         ]);
     }
 
