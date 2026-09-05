@@ -180,26 +180,26 @@ class OrderController extends Controller
 
         try {
             // Credit calculation
-            // $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
-            // $totalOrderAmount = OrderProduct::whereHas(
-            //     'order',
-            //     fn($q) =>
-            //     $q->where('employee_id', $employee->id)
-            // )->join('products', 'order_products.product_id', '=', 'products.id')
-            //     ->sum(DB::raw('order_products.quantity * products.sell_price'));
+            $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
+            $totalOrderAmount = OrderProduct::whereHas(
+                'order',
+                fn($q) =>
+                $q->where('employee_id', $employee->id)->where('status', 'pending')
+            )->join('products', 'order_products.product_id', '=', 'products.id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
             $discount = $validated['discount'] ?? 0;
             $newTotalOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
-            // $creditLimitUsage = $totalDue + $totalOrderAmount + $newTotalOrderAmount;
+            $creditLimitUsage = $totalDue + $totalOrderAmount + $newTotalOrderAmount;
 
-            // if ($creditLimitUsage > $employee->credit_limit) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'message' => 'Order exceeds employee credit limit.',
-            //         'data' => null
-            //     ], 422);
-            // }
+            if ($creditLimitUsage > $employee->credit_limit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Order exceeds employee credit limit.',
+                    'data' => null
+                ], 422);
+            }
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validated['cust_id']);
@@ -361,17 +361,20 @@ class OrderController extends Controller
 
             $employeeId = $request->user()->employee_id; // Retrieve the authenticated employee
             $employee = Employee::find($employeeId);
-            // $employeeCreditLimit = $employee->credit_limit;
+            $employeeCreditLimit = $employee->credit_limit;
 
-            // $totalDue = DB::table('invoices')
-            //     ->where('employee_id', $employeeId)
-            //     ->sum('due');
+            $totalDue = DB::table('invoices')
+                ->where('employee_id', $employeeId)
+                ->sum('due');
 
-            // $totalOrderAmount = DB::table('orders')
-            //     ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-            //     ->join('products', 'order_products.product_id', '=', 'products.id')
-            //     ->where('orders.employee_id', $employeeId)
-            //     ->sum(DB::raw('order_products.quantity * products.sell_price'));
+            $totalOrderAmount = OrderProduct::whereHas(
+                'order',
+                fn($q) =>
+                $q->where('employee_id', $employeeId)
+                    ->where('status', 'pending')
+                    ->where('id', '!=', $id) // Exclude current order being updated
+            )->join('products', 'order_products.product_id', '=', 'products.id')
+                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
             $order = Order::findOrFail($id);
 
@@ -380,16 +383,16 @@ class OrderController extends Controller
             $discount = $validated['discount'] ?? 0;
             $updatedOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
-            // // Calculate the adjusted credit limit after the update
-            // $credit_limit = $totalDue + $totalOrderAmount + $updatedOrderAmount;
+            // Calculate the adjusted credit limit after the update
+            $credit_limit = $totalDue + $totalOrderAmount + $updatedOrderAmount;
 
-            // if ($credit_limit > $employeeCreditLimit) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'message' => 'Updated order exceeds employee credit limit.',
-            //         'data' => null
-            //     ], 422);
-            // }
+            if ($credit_limit > $employeeCreditLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Updated order exceeds employee credit limit.',
+                    'data' => null
+                ], 422);
+            }
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validated['cust_id']);
