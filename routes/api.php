@@ -20,6 +20,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\SmsTemplateController;
+use App\Http\Controllers\SmsHistoryController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
@@ -211,6 +212,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // SMS Routes
     Route::post('/send-custom-sms', [SmsController::class, 'sendCustomSms'])->middleware('throttle:3,1')->name('sms.sendCustom');
+    Route::get('/sms-history', [SmsHistoryController::class, 'index'])->name('sms.history');
+    Route::get('/sms-summary', [SmsHistoryController::class, 'summary'])->name('sms.summary');
+    Route::get('/sms-balance', [SmsHistoryController::class, 'balance'])->name('sms.balance');
+    Route::post('/customerToggleSms/{id}', [CustomerController::class, 'toggleSms'])->name('customer.toggleSms');
 
     // Reports
     Route::get('/product-wise-sales', [ReportController::class, 'productWiseSalesByRole']);

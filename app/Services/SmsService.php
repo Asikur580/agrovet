@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\SmsHistory;
 
 class SmsService
 {
@@ -25,12 +26,17 @@ class SmsService
      *
      * @param string $to
      * @param string $message
+     * @param int|null $customerId
      * @return array
      */
-    public function sendSms($to, $message)
+    public function sendSms($to, $message, $customerId = null)
     {
         if (empty($this->apiUrl) || empty($this->apiKey) || empty($this->username)) {
             Log::error("SMS Gateway credentials not set.");
+
+            // Log failed SMS
+            $this->logSmsHistory($customerId, $to, $message, 'failed');
+
             return ['status' => false, 'message' => 'SMS Gateway credentials not set.'];
         }
 
@@ -54,14 +60,49 @@ class SmsService
 
             if (isset($result['statusCode']) && $result['statusCode'] == "200") {
                 Log::info("SMS sent to $formattedNumber. Transaction ID: " . ($result['trxnId'] ?? 'N/A'));
+
+                // Log successful SMS
+                $this->logSmsHistory($customerId, $formattedNumber, $message, 'sent');
+
                 return ['status' => true, 'response' => $result];
             }
 
             Log::error("Failed to send SMS to $formattedNumber. Response: ", (array)$result);
+
+            // Log failed SMS
+            $this->logSmsHistory($customerId, $formattedNumber, $message, 'failed');
+
             return ['status' => false, 'message' => 'SMS API request failed.'];
         } catch (\Exception $e) {
             Log::error("SMS Sending Error: " . $e->getMessage());
+
+            // Log failed SMS
+            $this->logSmsHistory($customerId, $to, $message, 'failed');
+
             return ['status' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Log SMS to sms_histories table.
+     *
+     * @param int|null $customerId
+     * @param string $phone
+     * @param string $message
+     * @param string $status
+     */
+    protected function logSmsHistory($customerId, $phone, $message, $status)
+    {
+        try {
+            SmsHistory::create([
+                'customer_id' => $customerId,
+                'phone' => $phone,
+                'message' => $message,
+                'status' => $status,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to log SMS history: " . $e->getMessage());
         }
     }
 
@@ -83,4 +124,36 @@ class SmsService
 
         return $phone;
     }
+
+    /**
+     * Check SMS balance from MiMSMS API.
+     *
+     * @return array
+     */
+    public function checkBalance()
+    {
+        try {
+            $baseUrl = rtrim(str_replace('/api/V2/SendSMS', '', $this->apiUrl), '/');
+            $balanceUrl = $baseUrl . '/api/V2/BalanceCheck';
+
+            $response = Http::get($balanceUrl, [
+                'userName' => $this->username,
+                'apiKey' => $this->apiKey,
+            ]);
+
+            $result = $response->json();
+
+            return [
+                'status' => true,
+                'data' => $result,
+            ];
+        } catch (\Exception $e) {
+            Log::error("SMS Balance Check Error: " . $e->getMessage());
+            return [
+                'status' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 }
+

@@ -422,9 +422,9 @@ class InvoiceController extends Controller
             }
 
             // Customer SMS notification
-            if ($customer && $customer->phone) {
+            if ($customer && $customer->phone && $customer->sms_enabled) {
                 $message = "Dear Customer,\n{$customer->customer_name}\nYour new invoice (ID: {$invoice->invoiceId}) has been created. Total Bill: {$invoice->grand_total} TK. Thank you for staying with us. - Radian Agrovet";
-                $this->smsService->sendSms($customer->phone, $message);
+                $this->smsService->sendSms($customer->phone, $message, $customer->id);
             }
 
 

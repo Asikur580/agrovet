@@ -291,4 +291,26 @@ class CustomerController extends Controller
             ]);
         }
     }
+    public function toggleSms($id)
+    {
+        try {
+            $customer = Customer::findOrFail($id);
+            $customer->sms_enabled = !$customer->sms_enabled;
+            $customer->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'SMS ' . ($customer->sms_enabled ? 'enabled' : 'disabled') . ' for customer successfully',
+                'data' => [
+                    'sms_enabled' => $customer->sms_enabled,
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to toggle SMS status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

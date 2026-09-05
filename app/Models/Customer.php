@@ -20,6 +20,7 @@ class Customer extends Model
         'purchase',
         'payment',
         'old_due',
+        'sms_enabled',
     ];
 
     /**

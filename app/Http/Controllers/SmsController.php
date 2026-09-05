@@ -43,7 +43,7 @@ class SmsController extends Controller
             $message = $request->message;
             $customerIds = $request->customer_ids;
 
-            $query = Customer::whereNotNull('phone');
+            $query = Customer::whereNotNull('phone')->where('sms_enabled', true);
 
             if (!empty($customerIds)) {
                 $query->whereIn('id', $customerIds);
@@ -62,7 +62,7 @@ class SmsController extends Controller
             $failCount = 0;
 
             foreach ($customers as $customer) {
-                $response = $this->smsService->sendSms($customer->phone, $message);
+                $response = $this->smsService->sendSms($customer->phone, $message, $customer->id);
                 if ($response['status']) {
                     $successCount++;
                 } else {

@@ -91,14 +91,14 @@ class PaymentController extends Controller
             // Customer SMS notification
             if ($payment->cust_id) {
                 $customer = Customer::find($payment->cust_id);
-                if ($customer && $customer->phone) {
+                if ($customer && $customer->phone && $customer->sms_enabled) {
                     // Calculate current due
                     $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
                     $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
                     $currentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
 
                     $message = "Dear Customer,\n{$customer->customer_name}\nYour payment of {$payment->amount} TK has been successfully received. Your current due: {$currentDue} TK. Thank you. - Radian Agrovet";
-                    $this->smsService->sendSms($customer->phone, $message);
+                    $this->smsService->sendSms($customer->phone, $message, $customer->id);
                 }
             }
 
