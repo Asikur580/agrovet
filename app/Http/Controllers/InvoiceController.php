@@ -261,13 +261,16 @@ class InvoiceController extends Controller
             $employee = Employee::find($validatedInvoice['employee_id']);
             $employeeCreditLimit = $employee->credit_limit;
 
-            $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
+            $totalCreditPurchase = Invoice::where('employee_id', $employee->id)->sum('grand_total');
+            $totalPayment = Payment::where('employee_id', $employee->id)->sum('amount');
+            $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
+
             $totalOrderAmount = Order::where('employee_id', $employee->id)
                 ->where('status', 'pending')
                 ->join('order_products', 'orders.id', '=', 'order_products.order_id')
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
-            $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
+            $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
 
             if ($validatedInvoice['sale_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {
@@ -501,15 +504,19 @@ class InvoiceController extends Controller
             // Get employee credit limit
             $employee = Employee::find($validatedInvoice['employee_id']);
             $employeeCreditLimit = $employee->credit_limit;
-            $totalDue = Invoice::where('employee_id', $employee->id)
+
+            $totalCreditPurchase = Invoice::where('employee_id', $employee->id)
                 ->where('id', '!=', $Id) // Exclude current invoice
-                ->sum('due');
+                ->sum('grand_total');
+            $totalPayment = Payment::where('employee_id', $employee->id)->sum('amount');
+            $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
+
             $totalOrderAmount = Order::where('employee_id', $employee->id)
                 ->where('status', 'pending')
                 ->join('order_products', 'orders.id', '=', 'order_products.order_id')
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
-            $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
+            $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
             
             if ($validatedInvoice['sale_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {

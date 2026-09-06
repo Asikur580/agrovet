@@ -179,8 +179,11 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Credit calculation
-            $totalDue = Invoice::where('employee_id', $employee->id)->sum('due');
+            // Credit calculation (grand_total - payments + pending orders + new order)
+            $totalCreditPurchase = Invoice::where('employee_id', $employee->id)->sum('grand_total');
+            $totalPayment = Payment::where('employee_id', $employee->id)->sum('amount');
+            $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
+
             $totalOrderAmount = OrderProduct::whereHas(
                 'order',
                 fn($q) =>
@@ -191,7 +194,7 @@ class OrderController extends Controller
             $discount = $validated['discount'] ?? 0;
             $newTotalOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
-            $creditLimitUsage = $totalDue + $totalOrderAmount + $newTotalOrderAmount;
+            $creditLimitUsage = $creditUseFromInvoices + $totalOrderAmount + $newTotalOrderAmount;
 
             if ($validated['order_type'] == 'credit') {
                 if ($creditLimitUsage > $employee->credit_limit) {
@@ -365,9 +368,11 @@ class OrderController extends Controller
             $employee = Employee::find($employeeId);
             $employeeCreditLimit = $employee->credit_limit;
 
-            $totalDue = DB::table('invoices')
+            $totalCreditPurchase = DB::table('invoices')
                 ->where('employee_id', $employeeId)
-                ->sum('due');
+                ->sum('grand_total');
+            $totalPayment = Payment::where('employee_id', $employeeId)->sum('amount');
+            $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
 
             $totalOrderAmount = OrderProduct::whereHas(
                 'order',
@@ -386,7 +391,7 @@ class OrderController extends Controller
             $updatedOrderAmount = $this->calculateGrandTotal($validated['products'], $discount);
 
             // Calculate the adjusted credit limit after the update
-            $credit_limit = $totalDue + $totalOrderAmount + $updatedOrderAmount;
+            $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $updatedOrderAmount;
 
             if ($validated['order_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {
