@@ -269,12 +269,14 @@ class InvoiceController extends Controller
 
             $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
 
-            if ($credit_limit > $employeeCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invoice exceeds employee credit limit.',
-                    'data' => null
-                ]);
+            if ($validatedInvoice['sale_type'] == 'credit') {
+                if ($credit_limit > $employeeCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invoice exceeds employee credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
 
@@ -508,11 +510,15 @@ class InvoiceController extends Controller
                 ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
 
             $credit_limit = $totalDue + $totalOrderAmount + $validatedInvoice['grand_total'];
-            if ($credit_limit > $employeeCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invoice exceeds employee credit limit.',
-                ]);
+            
+            if ($validatedInvoice['sale_type'] == 'credit') {
+                if ($credit_limit > $employeeCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invoice exceeds employee credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Customer Credit Limit check

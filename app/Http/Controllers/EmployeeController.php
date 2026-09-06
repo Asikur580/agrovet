@@ -19,7 +19,7 @@ class EmployeeController extends Controller
         $designation = $user->employee->designation->slug ?? null;
         $employeeId = $user->employee->id ?? null;
 
-        $query = Employee::with('designation', 'relations')->where('status', 'active');
+        $query = Employee::with('designation', 'relations', 'user:id,employee_id,email')->where('status', 'active');
 
         if (!in_array($designation, ['admin', 'super_admin', 'developer'])) {
             if ($designation === 'officer') {
@@ -61,6 +61,7 @@ class EmployeeController extends Controller
                 'national_id' => 'nullable|string',
                 'blood_group' => 'nullable|string',
                 'basic_salary' => 'nullable|numeric',
+                'credit_limit' => 'nullable|numeric',
             ]);
 
             // Handle the image upload if provided
@@ -79,7 +80,7 @@ class EmployeeController extends Controller
 
             // dd($request->user()->id);
             $validatedEmployeeData['created_by'] = $request->user()->id;
-            $validatedEmployeeData['credit_limit'] = 0; // Credit limit is auto-calculated from customers
+            $validatedEmployeeData['credit_limit'] = $validatedEmployeeData['credit_limit'] ?? 0;
 
             // Create the employee
             $employee = Employee::create($validatedEmployeeData);
@@ -128,6 +129,7 @@ class EmployeeController extends Controller
                 'national_id' => 'nullable|string',
                 'blood_group' => 'nullable|string',
                 'basic_salary' => 'nullable|numeric',
+                'credit_limit' => 'nullable|numeric',
             ]);
 
             // Handle the image upload if provided
@@ -153,7 +155,7 @@ class EmployeeController extends Controller
             $employee->update($validatedEmployeeData);
 
             // Return a success response
-            return response()->json(['status' => true, 'message' => 'Employee updated successfully', 'data' => $employee]);
+            return response()->json(['status' => true, 'message' => 'Employee updated successfully', 'data' => $employee->fresh()]);
         } catch (Exception $e) {
             // Return an error response
             return response()->json(['status' => false, 'message' => 'Something went wrong', 'error' => $e->getMessage()]);

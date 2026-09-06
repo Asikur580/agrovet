@@ -86,26 +86,7 @@ class Employee extends Model
      */
     public function recalculateCreditLimit()
     {
-        $designation = $this->designation ? $this->designation->slug : null;
-
-        if ($designation === 'officer') {
-            // Officer's credit_limit = SUM of their customers' credit_limit
-            $this->credit_limit = $this->customers()->sum('credit_limit');
-        } elseif ($designation === 'manager' || $designation === 'rsm') {
-            // Manager/RSM's credit_limit = SUM of subordinate employees' credit_limit
-            $subordinateIds = Relation::where('relation_id', $this->id)->pluck('employee_id');
-            $this->credit_limit = Employee::whereIn('id', $subordinateIds)->sum('credit_limit');
-        }
-
-        $this->save();
-
-        // Cascade up: find the superior and recalculate their credit_limit too
-        $superiorRelation = Relation::where('employee_id', $this->id)->first();
-        if ($superiorRelation) {
-            $superior = Employee::with('designation')->find($superiorRelation->relation_id);
-            if ($superior) {
-                $superior->recalculateCreditLimit();
-            }
-        }
+        // Credit limit is now manually managed during Employee Add/Edit.
+        // This function is kept empty to avoid breaking existing calls from other controllers.
     }
 }

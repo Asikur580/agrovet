@@ -193,12 +193,14 @@ class OrderController extends Controller
 
             $creditLimitUsage = $totalDue + $totalOrderAmount + $newTotalOrderAmount;
 
-            if ($creditLimitUsage > $employee->credit_limit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Order exceeds employee credit limit.',
-                    'data' => null
-                ], 422);
+            if ($validated['order_type'] == 'credit') {
+                if ($creditLimitUsage > $employee->credit_limit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Order exceeds employee credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Customer Credit Limit check
@@ -386,12 +388,14 @@ class OrderController extends Controller
             // Calculate the adjusted credit limit after the update
             $credit_limit = $totalDue + $totalOrderAmount + $updatedOrderAmount;
 
-            if ($credit_limit > $employeeCreditLimit) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Updated order exceeds employee credit limit.',
-                    'data' => null
-                ], 422);
+            if ($validated['order_type'] == 'credit') {
+                if ($credit_limit > $employeeCreditLimit) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Updated order exceeds employee credit limit.',
+                        'data' => null
+                    ], 422);
+                }
             }
 
             // Customer Credit Limit check
