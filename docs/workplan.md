@@ -61,7 +61,7 @@ the §0 decisions of the rebuild plan confirmed by the end of Stage A.
   formulas, table-driven tests.
 * `Employee::scopeVisibleTo()` with recursive CTE + per-user cache; scopes on Customer,
   Order, Invoice (by customer ownership), Payment.
-* Permissions kernel: `config/permissions.php` (all 143 codes), `permissions:sync`
+* Permissions kernel: `config/permissions.php` (all 137 codes), `permissions:sync`
   (+ `--constants` → `Perm` class + `permissions.ts`), `Gate::before` for `super-admin`,
   `User::hasPermissionTo` deny override, `effectivePermissionNames()`, cache flush hooks.
 * `HandleInertiaRequests` shared props (`auth`, `flash`, `pendingApprovals`, `notifications.unread`).

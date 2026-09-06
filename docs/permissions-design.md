@@ -54,7 +54,9 @@ plus module-specific actions (`orders.approve`, `stock.in`, `sms.send-all`, …)
 ## 2. Permission catalogue
 
 Code = `module.action`. "Replaces" lists the legacy permission name(s) so the migration
-loses nothing. **143 permissions** in 24 modules.
+loses nothing. **137 permissions** in 26 modules (implemented in P03 as `config/permissions.php`;
+`php artisan permissions:sync --constants` regenerates `App\Support\Perm` and
+`resources/js/types/permissions.ts`).
 
 ### Dashboard & account
 

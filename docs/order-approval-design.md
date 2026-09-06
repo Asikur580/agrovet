@@ -97,10 +97,15 @@ Schema::table('orders', function (Blueprint $t) {
     $t->string('rejection_reason', 255)->nullable();
     $t->string('approval_note', 255)->nullable();
     $t->boolean('approved_over_limit')->default(false);
-    $t->foreignId('invoice_id')->nullable()->constrained();        // set on convert
     $t->index(['status', 'employee_id']);
 });
 ```
+
+> Implemented in P02 as designed, with two adjustments: the link lives only on
+> `invoices.order_id` (unique, nullable) so there is no circular FK — `Order::invoice()` is a
+> `hasOne`; and closed sets (`status`, `order_type`, `price_type`) are `string` columns cast to
+> PHP backed enums (`App\Enums\OrderStatus` …) rather than DB `ENUM`s, so adding a status is a
+> code change on both MySQL and the SQLite test database.
 
 Every transition is also written to the activity log with the credit snapshot
 (customer due / limit / available, officer usage / limit) at that moment, so a later dispute

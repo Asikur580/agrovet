@@ -9,7 +9,7 @@ problems documented in the reviews, and ends with a one-time migration of the li
 | Document | Covers |
 | --- | --- |
 | [`database-review.md`](./database-review.md) | Why the schema changes; column-level redesign, indexes |
-| [`permissions-design.md`](./permissions-design.md) | Per-feature permission catalogue (143 codes), role + user-level assignment with allow/deny |
+| [`permissions-design.md`](./permissions-design.md) | Per-feature permission catalogue (137 codes), role + user-level assignment with allow/deny |
 | [`offboarding-design.md`](./offboarding-design.md) | What happens when an RSM / manager / officer resigns, is promoted, goes on leave |
 | [`order-approval-design.md`](./order-approval-design.md) | Officer submits → direct manager approves (or admin with permission); credit re-checks |
 | [`workplan.md`](./workplan.md) | **27 small phases, week-by-week calendar, two developer tracks, exit criteria** |
@@ -36,7 +36,7 @@ problems documented in the reviews, and ends with a one-time migration of the li
 | 7 | Database | **New clean schema + one-time ETL** — the only cheap moment to fix invoice numbering, the dual ledger, `DOUBLE` money, schema drift | Reuse current schema | §4, §7 |
 | 8 | UI kit | **Tailwind 4 + shadcn/ui** (official starter kit) | Ant Design — pick **one** | §5 |
 | 9 | Realtime | **Laravel Reverb** replaces the 60-second poll | Keep polling | §3.11 |
-| 10 | Invoice PDF | **Server-side** (`laravel-dompdf`; Browsershot if Bangla text must render) | client-side `@react-pdf` | §3.7 |
+| 10 | Invoice PDF | **dompdf for English-only documents; Browsershot the moment Bangla must print** — settled by the P05 spike (`pdf-engine-spike.md`): dompdf mis-shapes Bangla, Chrome renders it correctly | client-side `@react-pdf` | §3.7 |
 | 11 | Queue | `database` driver now; Redis + Horizon when SMS volume grows | Redis day one | §8 |
 | 12 | Offline | **Online-first**; old `localStorage` fallback dropped | Separate offline order-entry PWA in v2.1 if field officers truly need it | §10 |
 | 13 | Licence check | Server-side middleware with cached result | Drop | §3.13 |
@@ -158,7 +158,7 @@ self-registration. `users` 1:1 `employees` (unique FK). Deactivated user → log
 sessions invalidated (`EnsureUserIsActive`).
 
 ### 3.2 Roles & permissions — [`permissions-design.md`](./permissions-design.md)
-* **143 permissions** in 24 modules, codes in `config/permissions.php`, synced by
+* **137 permissions** in 26 modules, codes in `config/permissions.php`, synced by
   `permissions:sync`, typed constants in PHP (`Perm::…`) and TypeScript.
 * Roles (`super-admin`, `admin`, `rsm`, `manager`, `officer`, `accountant`, custom) carry a
   matrix; users inherit and get **allow** / **deny** overrides:
@@ -266,7 +266,7 @@ approval switches, SMS gateway, mail test, licence status, backup download.
 | `brands`, `categories` | |
 | `products` | `+ flat_price`, `low_stock_threshold`, `archived_at`; `quantity` cached |
 | `stock_movements` | unified ledger (replaces `stock_in_outs`) |
-| `orders`, `order_lines` | `status pending/approved/rejected/cancelled/invoiced`, `submitted_at`, `approved_by/at`, `rejected_by/at`, `rejection_reason`, `approval_note`, `approved_over_limit`, `invoice_id` |
+| `orders`, `order_lines` | `order_no` unique, `status pending/approved/rejected/cancelled/invoiced`, `submitted_at`, `approved_by/at`, `rejected_by/at`, `rejection_reason`, `approval_note`, `approved_over_limit`, `cancelled_at`; the invoice is reached via the unique `invoices.order_id` (no circular FK) |
 | `invoices`, `invoice_lines` | `invoice_no` unique, `order_id`, `type sale|opening`, `cost_price` on lines, soft deletes |
 | `payments`, `payment_allocations` | direction + morph counterparty |
 | `expense_categories`, `expenses` | merged |
@@ -286,7 +286,7 @@ transactional tables, indexes per `database-review.md` §3.8.
 | --- | --- |
 | `AppLayout` | Sidebar from `nav.ts` filtered by `useCan`; topbar with bell, approvals badge, user menu; flash toasts |
 | `DataTable` | TanStack Table, server-side pagination/sort/filter via URL, column visibility, row actions, export |
-| `FormField*` | shadcn inputs bound to `useForm`; `MoneyInput` (2 dp, no float maths), `DatePicker`, `MonthPicker`, `ImageUpload` |
+| `Field` + inputs | shadcn inputs wired for `<Form>` and `useForm`; `MoneyInput` (2 dp, no float maths), `DateInput`/`MonthInput` (native `date`/`month` inputs — reliable on field phones, no calendar library), `SelectField`, `ImageUpload` |
 | `Combobox` pickers | Async customer / product / employee search (session-protected JSON lookups — the only JSON endpoints) |
 | `LineItemsEditor` | Shared by Order and Invoice forms; live totals mirror server rounding |
 | `PermissionMatrix` | Role matrix and user override (tri-state) |

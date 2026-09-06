@@ -1,3 +1,4 @@
+| [`pdf-engine-spike.md`](./pdf-engine-spike.md) | P05 spike: dompdf vs Chrome/Browsershot with Bangla text — evidence and decision |
 # Radiant Agrovet — Project Overview
 
 ## 1. What This Project Is
@@ -146,7 +147,7 @@ These are observations from the code, not changes made:
 | [`architecture.md`](./architecture.md) | Request flow, layering, middleware & guards, conventions |
 | [`database-review.md`](./database-review.md) | Deep schema review against the production snapshot: problems found, evidence, redesign, indexing, roadmap |
 | [`rebuild-plan.md`](./rebuild-plan.md) | v2 rebuild plan on Laravel + Inertia + React: decisions, architecture, module design, phases, legacy data migration, cut-over |
-| [`permissions-design.md`](./permissions-design.md) | v2 access control: per-feature permission catalogue (143 codes), role + user-level assignment with allow/deny overrides, schema, code, admin UI, legacy mapping |
+| [`permissions-design.md`](./permissions-design.md) | v2 access control: per-feature permission catalogue (137 codes), role + user-level assignment with allow/deny overrides, schema, code, admin UI, legacy mapping |
 | [`order-approval-design.md`](./order-approval-design.md) | v2 order workflow: officer submits → direct manager approves (or admin with permission); state machine, policy, credit-limit re-checks, settings, approvals inbox, notifications |
 | [`workplan.md`](./workplan.md) | v2 delivery: 27 phases of 2–5 days in 6 stages, effort per phase, two developer tracks, week-by-week calendar, dependencies, definition of done, product-owner inputs |
 | [`offboarding-design.md`](./offboarding-design.md) | v2 hierarchy lifecycle: what happens when an RSM / manager / officer resigns, is promoted or goes on leave — handover workflow, caretaker & Head Office fallbacks, ownership history, scoping rules, invariants |
