@@ -443,6 +443,21 @@ activity()->causedBy(auth()->user())->performedOn($target)->withProperties($diff
 
 ## 5. Admin UI
 
+> **Built in P08.** Routes: `/users`, `/users/{user}/edit`, `/users/{user}/access`,
+> `/users/{user}/permissions`, `/roles`, `/roles/{role}/edit`, `/permissions`,
+> `/activity-log`. Three notes on how the built version differs from the sketches below:
+>
+> * The matrix **derives its columns** from the catalogue — an action shared by at least two
+>   modules becomes a column, everything else lands in an "Other" cell. Nothing about modules
+>   or actions is hard-coded in the frontend, so a new entry in `config/permissions.php`
+>   appears on both screens with no React change.
+> * **Not built:** "Copy overrides from user" (§5.2). "Copy from role" exists on the role
+>   screen, where it does the same job at the level that scales; per-user copying can be added
+>   if support actually asks for it.
+> * **Not built:** the optional delegation cap of §4.8 (a user may only grant what they hold).
+>   It stays optional; the lock-out and last-super-admin guards are in place.
+
+
 ### 5.1 Roles — `/roles`, `/roles/{role}/edit`
 
 ```

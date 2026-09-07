@@ -157,6 +157,25 @@ Starter-kit login/logout/password reset/profile (*/login, /logout, /profile\**).
 self-registration. `users` 1:1 `employees` (unique FK). Deactivated user → login blocked,
 sessions invalidated (`EnsureUserIsActive`).
 
+Built in P09, with four decisions worth recording:
+
+* **Deactivating ends live sessions immediately** (`UserSessions::purge`, database session
+  driver) instead of waiting for the account's next request; `EnsureUserIsActive` stays as
+  the backstop. Changing a password does the same to every *other* session and clears
+  `remember_token`.
+* **Accounts cannot delete themselves.** The starter kit shipped a "delete account" card and
+  it is removed: deleting would orphan the audit trail and every `created_by` column, and it
+  routes around the last-super-admin guard. Administrators deactivate instead
+  (`users.delete`), which is reversible.
+* **The profile page carries the legacy metrics block** (customers, team, sales count and
+  total, credit limit / used / available) plus the employee's own contact details — the two
+  things legacy `POST /api/profile/update` wrote. Sales count on `invoices.employee_id`
+  ("who sold"); credit on current customer ownership, so the numbers agree with the credit
+  guard and survive a handover. Designation, manager, credit limit and roles are not
+  editable here; they belong to an administrator.
+* `users.last_login_at` is stamped by a `Login` listener, which is what the "Last login"
+  column on the user list reads.
+
 ### 3.2 Roles & permissions — [`permissions-design.md`](./permissions-design.md)
 * **137 permissions** in 26 modules, codes in `config/permissions.php`, synced by
   `permissions:sync`, typed constants in PHP (`Perm::…`) and TypeScript.
@@ -178,7 +197,18 @@ sessions invalidated (`EnsureUserIsActive`).
 * **Leaving / promotion / leave = handover wizard**: customers, subordinates, open orders
   reassigned (or parked with a **caretaker manager** / **Head Office**) before deactivation;
   clearance checklist; final settlement; `hierarchy:check` nightly; reactivation.
-* *Credit report* (*/employees/credit-report*) → one grouped query.
+* *Credit report* (*/employees/credit-report*) → one grouped query (correlated sub-selects,
+  hierarchy-scoped, optional date window). **Built in P07 and it deliberately differs from the
+  legacy report in two ways**, so that it can never contradict what `CreditGuard` blocks at
+  order/invoice time:
+  * usage is keyed on **current customer ownership**, not `invoices.employee_id`, so a handover
+    moves the exposure with the customers (offboarding-design §4); sales *performance* reports
+    keep using `invoices.employee_id`, because "who sold" never changes;
+  * only **open** (pending/approved) orders count toward usage — legacy summed every credit
+    order regardless of status and so double counted anything already invoiced.
+
+  On the demo seed, where nothing has been handed over, the purchases column matches the legacy
+  formula employee for employee (asserted in `CreditReportTest`).
 
 ### 3.4 Customers & suppliers
 * Customers (*/customers\**): code from `document_sequences`, owner must be an **officer**
@@ -187,12 +217,64 @@ sessions invalidated (`EnsureUserIsActive`).
   history, bulk **reassign** tool. Show page tabs: details, invoices, payments, SMS log.
 * Suppliers (*/suppliers\**): details, purchases, payments, balance.
 
+Suppliers built in P11. Three notes:
+
+* **The balance is derived, never stored**: purchases come from the stock ledger
+  (Σ qty × unit_cost of their `purchase` movements) and payments from what was sent to them,
+  so the figure cannot drift from the movements behind it (database-review §2.8). Archiving
+  is refused while anything is still payable.
+* **Supplier phone numbers are free text**, unlike customers'. The table has a `country`
+  column and suppliers can be abroad, so the Bangladeshi mobile pattern would reject valid
+  numbers.
+* `suppliers.export` was **added to the permission catalogue** in this phase: the workplan
+  asks for an export and no code existed for it (permissions-design §8 makes adding the code
+  part of the definition of done). The accountant role picks it up through its `suppliers.*`
+  wildcard, taking the catalogue to 138 permissions.
+
+Customers built in P10. Five decisions worth recording:
+
+* **Phone numbers are normalised on the way in** (`App\Support\Phone`): anything a user
+  types — `01712-345678`, `+880 1712 345678`, `8801712345678` — is stored as
+  `8801712345678`, and uniqueness is checked against that value, so the same number cannot
+  be entered twice in two different shapes. Only real operator prefixes (013–019) are
+  accepted; the seed factory was corrected to match.
+* **The opening balance is an invoice**, type `opening`, with no lines. Legacy kept it in
+  `customers.old_due`, a column the ledger knew nothing about, so a statement never
+  reconciled with the invoices behind it (database-review §2.5). As an invoice it is
+  counted by the same query as everything else and a payment can be allocated against it.
+* **Ownership moves only through `ReassignCustomer`**, which writes the
+  `customer_assignments` row and lets the credit roll-up move the exposure between chains.
+  Several moves on the same day collapse to one open row rather than leaving rows that end
+  before they start; each move is still recorded in the activity log.
+* **A manager may own a customer only as a caretaker** (offboarding-design §6). The flag is
+  stored on the assignment row, shown as a badge, and is the only way the owner-must-be-an-
+  officer rule relaxes.
+* **Customers are archived, never deleted**, and archiving is refused while orders are open.
+  The credit limit and the SMS switch each sit behind their own permission
+  (`customers.set-credit-limit`, `customers.toggle-sms`), so an officer can create a shop
+  but not decide how much credit it gets.
+
 ### 3.5 Catalogue & inventory
 * Brands, categories with sales drill-down. Products: prices (`buy`, TP, `flat`) behind
   `products.set-prices`, `quantity` cached, expiry, low-stock threshold, archive.
 * **`stock_movements`** ledger — `purchase` (*/stock_in*), `adjustment` / `transfer`
   (*/stock_out*, employee FK instead of free text), `sale`, `sale_reversal`, `return`.
   `PostStockMovement` is the only writer of `products.quantity`; `stock:rebuild` reconciles.
+
+Products built in P12. Four decisions:
+
+* **`quantity` is never editable.** There is no quantity field on the form, and SaveProduct
+  strips one if it arrives anyway. Stock only moves through the ledger (P13), which is what
+  keeps the cached figure and the movements behind it in agreement (database-review §2.8).
+  A new product starts at zero and is stocked by a purchase.
+* **`flat_price` is a real column now.** Legacy accepted it as mass-assignable with no column
+  behind it, so every value was silently discarded (features.md §5).
+* **The three prices are one permission, and it reaches every surface.** Without
+  `products.set-prices` the form omits them, the request rejects them, the show page hides
+  them, the print sheet drops its price columns and the CSV export leaves them out — so a
+  catalogue export cannot leak the buy price to someone who may not see it.
+* **Archiving is blocked by open orders, not by stock on hand.** A discontinued item often
+  has a few units left; an open order line, on the other hand, could no longer be invoiced.
 
 ### 3.6 Orders — [`order-approval-design.md`](./order-approval-design.md)
 * Officer creates (`pending`); lines `{product, qty, bonus, price_type, unit_price}`,

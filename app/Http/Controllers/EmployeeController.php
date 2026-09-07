@@ -199,9 +199,10 @@ class EmployeeController extends Controller
             $employees = Employee::where('status', 'active')->get();
 
             $report = $employees->map(function ($employee) use ($fromDate, $toDate) {
-                // Total credit purchase from invoices
+                // Total credit purchase from invoices. Cash sales never consume the credit limit.
                 $purchaseQuery = DB::table('invoices')
-                    ->where('employee_id', $employee->id);
+                    ->where('employee_id', $employee->id)
+                    ->where('sale_type', 'credit');
 
                 if ($fromDate && $toDate) {
                     $purchaseQuery->whereBetween('sale_date', [$fromDate, $toDate]);

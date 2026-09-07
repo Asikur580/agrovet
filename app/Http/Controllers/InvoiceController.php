@@ -209,6 +209,26 @@ class InvoiceController extends Controller
 
 
     /**
+     * Sum the value of pending credit orders that still hold credit.
+     *
+     * Orders with no order_type are treated as credit so legacy rows stay counted.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query  Query already scoped to an employee or a customer.
+     * @param  int|null  $excludeOrderId  Order being converted into an invoice right now.
+     */
+    private function pendingCreditOrderAmount($query, $excludeOrderId = null)
+    {
+        return $query->where('orders.status', 'pending')
+            ->where(function ($q) {
+                $q->where('orders.order_type', '!=', 'cash')
+                    ->orWhereNull('orders.order_type');
+            })
+            ->when($excludeOrderId, fn($q) => $q->where('orders.id', '!=', $excludeOrderId))
+            ->join('order_products', 'orders.id', '=', 'order_products.order_id')
+            ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+    }
+
+    /**
      * Store a newly created invoice in storage.
      */
     public function store(Request $request, $orderId = null)
@@ -254,21 +274,33 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            // Add the employee ID from the authenticated user
-            $validatedInvoice['employee_id'] = $request->user()->employee_id;
+            // Resolve the source order first, so the credit checks below can exclude it.
+            $order = $orderId != null ? Order::findOrFail($orderId) : null;
+
+            // Add the employee ID from the order when invoicing an order, otherwise from the authenticated user
+            $validatedInvoice['employee_id'] = $order ? $order->employee_id : $request->user()->employee_id;
+
+            // Copy offer from the order if not explicitly set in the request
+            if ($order && empty($validatedInvoice['offer']) && !empty($order->offer)) {
+                $validatedInvoice['offer'] = $order->offer;
+            }
 
             // Check credit limit for the order (before creating the invoice)
             $employee = Employee::find($validatedInvoice['employee_id']);
             $employeeCreditLimit = $employee->credit_limit;
 
-            $totalCreditPurchase = Invoice::where('employee_id', $employee->id)->sum('grand_total');
+            // Only credit sales consume the credit limit. Cash sales are settled at the counter.
+            $totalCreditPurchase = Invoice::where('employee_id', $employee->id)
+                ->where('sale_type', 'credit')
+                ->sum('grand_total');
             $totalPayment = Payment::where('employee_id', $employee->id)->sum('amount');
             $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
 
-            $totalOrderAmount = Order::where('employee_id', $employee->id)
-                ->where('status', 'pending')
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            // Pending credit orders still hold credit, except the order that is being invoiced now.
+            $totalOrderAmount = $this->pendingCreditOrderAmount(
+                Order::where('employee_id', $employee->id),
+                $order?->id
+            );
 
             $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
 
@@ -287,13 +319,15 @@ class InvoiceController extends Controller
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
             $customerCreditLimit = $customer->credit_limit;
 
-            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)
+                ->where('sale_type', 'credit')
+                ->sum('grand_total');
             $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
 
-            $custPendingOrderAmount = Order::where('cust_id', $customer->id)
-                ->where('status', 'pending')
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            $custPendingOrderAmount = $this->pendingCreditOrderAmount(
+                Order::where('cust_id', $customer->id),
+                $order?->id
+            );
 
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $validatedInvoice['grand_total'];
@@ -320,29 +354,7 @@ class InvoiceController extends Controller
             $validatedInvoice['invoiceId'] = $customInvoiceId;
 
 
-            if ($orderId != null) {
-                // Find the order or throw a ModelNotFoundException
-                $order = Order::findOrFail($orderId);
-
-                $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
-
-                // Add the employee ID from the order table
-                $validatedInvoice['employee_id'] = $order->employee_id;
-
-                // Copy offer from the order if not explicitly set in the request
-                if (empty($validatedInvoice['offer']) && !empty($order->offer)) {
-                    $validatedInvoice['offer'] = $order->offer;
-                }
-
-                // Delete associated order products
-                $order->orderProducts()->delete();
-
-                // Delete the order itself
-                $order->delete();
-            }
-
-
-             if ($validatedInvoice['sale_type'] == 'credit') {
+            if ($validatedInvoice['sale_type'] == 'credit') {
                 if ($custCreditUsage > $customerCreditLimit) {
                     return response()->json([
                         'status' => false,
@@ -350,6 +362,15 @@ class InvoiceController extends Controller
                         'data' => null
                     ], 422);
                 }
+            }
+
+            // Every credit check passed, so the source order can be consumed now.
+            if ($order) {
+                // Delete associated order products
+                $order->orderProducts()->delete();
+
+                // Delete the order itself
+                $order->delete();
             }
 
             // Create the invoice
@@ -506,15 +527,15 @@ class InvoiceController extends Controller
             $employeeCreditLimit = $employee->credit_limit;
 
             $totalCreditPurchase = Invoice::where('employee_id', $employee->id)
+                ->where('sale_type', 'credit')
                 ->where('id', '!=', $Id) // Exclude current invoice
                 ->sum('grand_total');
             $totalPayment = Payment::where('employee_id', $employee->id)->sum('amount');
             $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
 
-            $totalOrderAmount = Order::where('employee_id', $employee->id)
-                ->where('status', 'pending')
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            $totalOrderAmount = $this->pendingCreditOrderAmount(
+                Order::where('employee_id', $employee->id)
+            );
 
             $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
             
@@ -532,16 +553,18 @@ class InvoiceController extends Controller
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
             $customerCreditLimit = $customer->credit_limit;
 
-            $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
+            $custTotalPurchase = Invoice::where('cust_id', $customer->id)
+                ->where('sale_type', 'credit')
+                ->where('id', '!=', $Id) // Exclude current invoice
+                ->sum('grand_total');
             $custTotalPayment = Payment::where('cust_id', $customer->id)->sum('amount');
 
-            $custPendingOrderAmount = Order::where('cust_id', $customer->id)
-                ->where('status', 'pending')
-                ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
+            $custPendingOrderAmount = $this->pendingCreditOrderAmount(
+                Order::where('cust_id', $customer->id)
+            );
 
-            // Adjust total purchase by removing old grand total and adding new grand total
-            $newCustTotalPurchase = $custTotalPurchase - $invoice->grand_total + $validatedInvoice['grand_total'];
+            // The current invoice is excluded above, so add its new grand total back in
+            $newCustTotalPurchase = $custTotalPurchase + $validatedInvoice['grand_total'];
             $custCurrentDue = ($customer->old_due + $newCustTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
 
