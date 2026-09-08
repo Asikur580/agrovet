@@ -31,6 +31,13 @@ with it**, regardless of font.
 * Screen printing (`PrintLayout` + `window.print()`) already renders Bangla correctly because
   it *is* Chrome — most "print" needs are covered without any PDF library.
 
+## Outcome in P16
+
+The invoice PDF ships on dompdf as decided, from `resources/views/pdf/invoice.blade.php`, and
+the screen print view (`pages/print/invoice.tsx`) is the Chrome-rendered twin. Both are fed by
+`App\Support\Invoices\InvoiceDocument`, so switching this one document to Browsershot later
+means changing the renderer, not the content.
+
 ## Artefacts
 
 * Template kept at `resources/views/pdf/sample-invoice.blade.php` as the starting point for the

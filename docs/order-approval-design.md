@@ -213,6 +213,12 @@ Total catalogue: 143 codes.
 
 ---
 
+> **Built in P15.** Implemented as designed, with three notes: the escalation stamp lives in
+> a new `orders.escalated_at` column so an order is escalated once; `Settings::bool()` reads
+> the runtime settings table (the editing screen is P24); and the "who may approve" check
+> reads the officer row whole rather than trusting an eager-loaded subset, after a drive
+> found that `employee:id,name` hid `manager_id` and silently refused every approval.
+
 ## 10. Tests
 
 | Scenario | Assert |

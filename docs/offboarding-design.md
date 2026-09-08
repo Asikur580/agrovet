@@ -322,6 +322,23 @@ The ETL must not carry the broken state forward:
 
 ---
 
+## 10a. What the build settled (P19)
+
+The design above is what was built; five details were only decided at the keyboard.
+
+| Question the design left open | How P19 answered it |
+| --- | --- |
+| When is a plan row "decided"? | An item leaves `pending` and carries the answer: a **customer** or **team member** row is `done` with a successor (a team row `done` with no successor means Head Office), an **order** row is `done` with a successor or `skipped` to cancel, and a **clearance** row is `done` or `skipped`. `CompleteHandover` refuses while anything is still `pending`. |
+| Where do promotion details live? | Two nullable columns on `handovers` (`to_designation_id`, `to_manager_id`) plus `expected_return_on` for long leave, and an `amount` on `handover_items` for the clearance figures. |
+| May an officer be parked at Head Office? | Not through the reporting-line dialog — `AssignManager` refuses, because a manager approves an officer's orders. Only `AssignManager::toHeadOffice()`, reached from a handover, may do it, and §8's check reports the team until somebody fixes it. |
+| What happens to a customer with no history rows (ETL, or a row written before the action existed)? | `ReassignCustomer` back-fills one closed row for the previous owner the first time the customer moves, so invariant 5 holds from then on. It does not back-fill when the owner is not changing — that call is the one opening the history. |
+| Does the leaver keep an open reporting line? | No. Completion detaches them (`manager_id = null`, open line closed on the last working day) so their limit stops rolling up into their old manager's, which is exactly the legacy bug in §10. |
+
+The nine scenarios in §11 are covered by `tests/Feature/Handovers/HandoverTest.php`, and the
+`hierarchy:check` command reports each invariant with a non-zero exit code.
+
+---
+
 ## 11. Tests
 
 | Scenario | Assert |

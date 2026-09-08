@@ -197,6 +197,30 @@ Built in P09, with four decisions worth recording:
 * **Leaving / promotion / leave = handover wizard**: customers, subordinates, open orders
   reassigned (or parked with a **caretaker manager** / **Head Office**) before deactivation;
   clearance checklist; final settlement; `hierarchy:check` nightly; reactivation.
+
+Built in P19. Five decisions:
+
+* **A plan is not a move.** Starting a handover changes nothing: the employee keeps their
+  team, their customers and their login while an administrator works out where everything
+  goes. `CompleteHandover` is the only thing that writes, and it writes in one transaction —
+  either every customer, report and open order lands where the plan says and the account
+  closes, or nothing happens at all.
+* **The completion guard re-reads the database, it does not trust the plan.** A leaver keeps
+  selling through their notice period, so every visit to the wizard re-syncs what actually
+  depends on them (`SyncHandoverItems`) and the transaction refuses to deactivate anybody who
+  still owns something. This is the invariant legacy never had.
+* **Head Office is an escape valve, and only a handover may use it.** `AssignManager` still
+  refuses to leave an officer without a manager, because their manager approves their orders;
+  `AssignManager::toHeadOffice()` deliberately bypasses that rule when a manager resigns with
+  no successor, and `hierarchy:check` plus a dashboard widget nag until it is fixed
+  (offboarding-design §6).
+* **Coming back is not the reverse of leaving.** Reactivation needs a manager and restores the
+  login, but the customers stay with whoever has been serving them. The one shortcut reads the
+  completed handover and returns only the customers still sitting with the person who took
+  them — anything that has moved on since was somebody's decision.
+* **Credit is simulated before it is changed.** Step 4 shows the limit of the leaver, every
+  successor and every manager above them, before and after, computed without writing anything
+  (`CreditPreview`). An administrator sees a manager's limit double before agreeing to it.
 * *Credit report* (*/employees/credit-report*) → one grouped query (correlated sub-selects,
   hierarchy-scoped, optional date window). **Built in P07 and it deliberately differs from the
   legacy report in two ways**, so that it can never contradict what `CreditGuard` blocks at
@@ -276,6 +300,35 @@ Products built in P12. Four decisions:
 * **Archiving is blocked by open orders, not by stock on hand.** A discontinued item often
   has a few units left; an open order line, on the other hand, could no longer be invoiced.
 
+The ledger was built in P13. Six decisions:
+
+* **One action writes stock, and it locks the row.** `PostStockMovement` creates the movement
+  and increments `products.quantity` inside a transaction, after `lockForUpdate` on the
+  product, so two people selling the last unit cannot both pass the guard. Legacy moved stock
+  from three places — a manual table, invoice creation, and invoice edits that incremented in
+  place — which is how a quantity became unexplainable (database-review §2.8).
+* **Sign and type have to agree.** A purchase is positive and needs both a supplier and a unit
+  cost, a sale or a transfer is negative, and a zero movement is rejected outright. A purchase
+  without cost and supplier would leave the supplier balance and the stock value guessing.
+* **Nothing goes below zero.** The insufficient-stock guard names the product, what it holds
+  and what the movement wants: "Not enough stock: Aromec 3% has 3, this adjustment needs 5."
+  The message lands on the quantity field of whichever form posted it.
+* **Movements are append-only.** There is no edit and no delete route. A mistake is corrected
+  by a further movement with a reason, which is why the reason is required on every manual
+  stock-out and why the ledger keeps `created_by`.
+* **The cache is checked nightly, and the check is a page too.** `stock:reconcile` compares
+  every cached quantity against the sum of its movements and exits non-zero on drift;
+  `stock:rebuild` sets the cache back to the ledger. `/stock/reconcile` shows the same report
+  to anyone with `stock.view`, so the legacy −10 product would now be visible the same day.
+* **Two permissions, one form.** `stock.out` covers transfers and returns, `stock.adjust`
+  covers correcting the count. Both reach `/stock/out`; the form request picks the permission
+  from the movement type, so an adjuster cannot post a transfer.
+
+Low stock is a page (`/stock/low-stock`, `stock.low-stock`) listing everything at or below its
+own threshold with the cost to restock, plus `stock:low-stock-digest`, a 07:00 database and
+mail digest sent only when something is actually low, and only to active users who hold the
+permission.
+
 ### 3.6 Orders — [`order-approval-design.md`](./order-approval-design.md)
 * Officer creates (`pending`); lines `{product, qty, bonus, price_type, unit_price}`,
   discount %, offer, cash/credit; `CreditGuard` blocks over-limit submissions.
@@ -286,6 +339,66 @@ Products built in P12. Four decisions:
 * Approvals inbox with credit columns and bulk approve; pending-approvals badge; escalation
   after 24 h; settings switches (approval required, upline, auto-approve cash, escalation).
 * Every transition stamped and logged with a credit snapshot.
+
+#### The shared line editor (built in P14)
+
+`App\Support\Sales\DocumentTotals` is the only place order and invoice money is added up,
+and `resources/js/lib/totals.ts` mirrors it. `tests/fixtures/document-totals.json` is one
+table of cases that both the Pest test and the vitest test run, so the two can never drift
+apart quietly. Five decisions:
+
+* **The browser computes the same numbers as the server, not similar ones.** Legacy added
+  totals up in the invoice controller, again in the order controller and again in each
+  report, so a report could disagree with the invoice it summarised (features.md §11).
+* **Bonus units are free goods.** A line is worth `unit_price × quantity`; bonus moves stock
+  and never money.
+* **Discount arrives two ways.** Orders carry a percentage (`orders.discount_percent`),
+  invoices carry an amount plus a "less"; both end at
+  `roundBusiness(subtotal − discount − less)`, the .50↓ / .51↑ rule the business has always
+  used. The rounding is shown on the form rather than hidden.
+* **Discount and less are apportioned per line, and the remainder is placed, not dropped.**
+  Each share is proportional to the line amount, and the last paisa lands on the largest
+  line, so product-wise and category-wise revenue reconciles to the grand total exactly.
+* **A product appears once per document.** `order_lines` and `invoice_lines` are unique per
+  product, so the editor flags a repeat instead of letting the insert fail.
+
+The editor renders hidden inputs, so it drops into an Inertia `<Form>` with no extra wiring,
+and `/dev/kit` shows its totals beside the server's answer for the same payload — the P14
+exit criterion, visible in a browser.
+
+#### The approval workflow (built in P15)
+
+Built to `order-approval-design.md`; §10's table is now `tests/Feature/Orders/OrderApprovalTest.php`.
+Six decisions worth keeping:
+
+* **The check that legacy never had.** `OrderPolicy` decides every transition: admin level
+  anywhere, otherwise the officer's **direct** manager, plus the upline only when
+  `orders.approval.allow_upline` is on — and never the order's own officer, whatever
+  permissions they hold. Legacy flipped `pending ⇄ active` on a route that trusted the
+  caller and only hid the button in the UI.
+* **The credit gates run twice, and the second run is the one that counts.** They block a
+  submission outright, and they run again at approval because payments and other orders move
+  the position in between. A breach then needs `orders.approve-over-limit` **and** a reason,
+  which is stored on the order and shown in its history.
+* **Every decision is a record.** Each transition writes an activity-log entry with the
+  reason and a snapshot of both credit positions, so a dispute months later can show what
+  the approver was looking at.
+* **Orders are never deleted.** `cancelled` and `invoiced` are terminal, a rejected order is
+  edited and resubmitted (the edit *is* the resubmission), and an approved order is frozen
+  until somebody un-approves it with a reason.
+* **The bell stays quiet.** Only the direct manager is notified, or the admins when the
+  officer reports to Head Office. Anything still undecided after
+  `orders.approval.escalate_after_hours` is escalated once — `orders.escalate` runs hourly
+  and stamps `orders.escalated_at`, a column added in P15 for exactly that.
+* **Settings decide how much ceremony there is.** `orders.approval.required` off creates
+  orders already approved, `auto_approve_cash` skips the queue for cash orders inside every
+  limit, and credit orders always wait for a person. `App\Support\Settings` reads the table
+  with a cache; the screen that writes it is P24.
+
+Two defects the browser drive caught, both worth remembering: a page that eager-loads a
+relation with a **column subset** (`employee:id,name`) hands the policy a null `manager_id`
+and the credit guard a null `credit_limit`. The policy and `DecideOrder::recheckCredit` now
+read those rows whole, and a regression test pins it.
 
 ### 3.7 Sales / invoices
 * `CreateInvoice` (transaction): `invoice_no` from `document_sequences`, totals recomputed
@@ -298,6 +411,47 @@ Products built in P12. Four decisions:
 * Visibility by **customer ownership** (see offboarding §4); "sales by employee" reports use
   `invoices.employee_id`.
 
+#### Invoices (built in P16)
+
+* **One transaction writes the whole sale.** Number, totals, both credit gates, one
+  `stock_movements(sale)` per line, the cash taken at the door, and closing the order it came
+  from. Legacy did the same work in three places, each able to fail alone, which is how an
+  invoice could exist with no stock movement behind it (database-review §2.8).
+* **Two snapshots, never recomputed.** `invoice_lines.cost_price` freezes what the goods cost
+  on the day, so a margin report is not rewritten by tomorrow's buy price; `invoices.employee_id`
+  freezes who sold it, while visibility follows the customer's current owner
+  (offboarding-design §4).
+* **Editing is a reversal plus a fresh posting.** `UpdateInvoice` posts `sale_reversal` rows
+  for the old lines and `sale` rows for the new ones, so `stock:reconcile` can still explain
+  every unit. Legacy incremented `products.quantity` in place.
+* **Deleting is soft, and blocked by money.** The stock comes back, the row and its number
+  stay, and an invoice with payments allocated to it cannot be deleted — unpicking an
+  allocation is a payment decision (P17). An order whose invoice is deleted goes back to
+  `approved`.
+* **Bonus units move stock but never money.** The line is worth `unit_price × quantity`; the
+  movement is `quantity + bonus_qty`.
+* **Due is still never stored.** `App\Support\Invoices\InvoiceDue` computes it as
+  grand total minus allocations, for one invoice, for a filter, and for the list summary —
+  opening balances included, which is what holding them as invoices bought us
+  (database-review §2.5).
+* **Conversion keeps the order.** `ConvertOrderToInvoice` copies the lines, the offer and the
+  order's officer, then marks the order `invoiced`; legacy deleted the order and its lines,
+  so nobody could compare what was ordered with what was delivered.
+* **Print is Chrome, PDF is dompdf.** Both read one array from
+  `App\Support\Invoices\InvoiceDocument`, so the paper and the file can never disagree.
+  The PDF is English-only by design (pdf-engine-spike.md); the screen print renders Bangla
+  correctly because it is a browser.
+
+Two defects the drive caught, both worth carrying forward:
+
+* **A `date` cast serialises as an ISO timestamp**, which `<input type="date">` rejects
+  outright — the field simply renders empty. Every DATE column is now cast `date:Y-m-d`
+  (invoices, orders, employees, products, payments, salaries, expenses, stock movements and
+  the two history tables), so a date is a day everywhere it crosses the wire.
+* **A guard that only throws is invisible.** Deleting a paid invoice returned a validation
+  error the show page never rendered, so the dialog closed and looked like it had worked.
+  The delete now reports the guard's message as a toast.
+
 ### 3.8 Payments
 * One `payments` table: `direction in|out`, morph counterparty (customer / supplier /
   employee), `collected_by`, method, reference, date. `payment_allocations` settle invoices
@@ -305,11 +459,71 @@ Products built in P12. Four decisions:
 * Customer due = `Σ open invoices − Σ allocations` — one accessor everywhere. SMS on customer
   payment (queued).
 
+#### Payments (built in P17)
+
+* **One ledger, one meaning per column.** Legacy's `payments` had three nullable foreign
+  keys, so a row could name a customer *and* a supplier, or neither, and `employee_id` meant
+  "collector" or "payee" depending on its siblings (database-review §2.6). The counterparty
+  is now a morph — exactly one party — and `collected_by` only ever means who took the money.
+* **Every taka can be traced, or deliberately not.** `payment_allocations` settle invoices
+  oldest first by default, which is how a collector applies cash; an explicit map overrides
+  that; anything left over stays as an advance and is reported as `unapplied`.
+* **Nothing about a due is stored.** `App\Support\Payments\CustomerBalance` is the single
+  calculation: `billed − received`, floored at zero. The customer page, the credit gates,
+  the payment screens and the print history all read it, so the three disagreeing answers of
+  the legacy system (database-review §2.5, §2.9) cannot come back.
+* **Money in hand frees credit immediately.** An unapplied advance still reduces what the
+  customer owes, so a customer who pays before ordering is not blocked by their own cash.
+* **Deleting a payment gives the money back.** The allocations go first, so the invoices it
+  settled owe again, then the row is soft-deleted with its number intact.
+* **Allocation guards are per invoice and per payment.** Nothing can take more than an
+  invoice still owes, or more in total than the payment is worth, and money can only be
+  pointed at invoices belonging to the same customer.
+
 ### 3.9 Expenses & payroll
 * `expense_categories(scope office|employee)` merges the two legacy tables; expenses with
   receipt attachment.
 * Salaries: unique (employee, month); carry-forward in `PostSalary`; final settlement from
   handover; "next payable" computed on the payroll index.
+
+Payroll was built in P21. **The formula is legacy's, the carry-forward is not.** Four decisions:
+
+* **A row's `due`/`advance` is the position it carries out of that month**, and the next month
+  reads only that row. Legacy summed the due and advance of *every* earlier row
+  (`SalaryController@store`), so a due that had already been settled kept inflating every
+  month after it: Jan short 400 → Feb pays 1400 and settles it → Mar is charged the same 400
+  again. The same bug credited a recovered advance twice. With one row in the whole Feb-2026
+  snapshot, nothing in production depends on the old behaviour.
+* **Every later month is re-derived on any write** (`RebuildSalaryLedger`). Correcting,
+  back-dating or deleting a month rewrites the chain below it, so the ledger cannot disagree
+  with itself — legacy computed a row once and never revisited it.
+* **The month's basic salary is a snapshot.** A raise changes what the *next* month costs; it
+  does not rewrite a month already paid. `UpdateSalary` can still correct it by hand.
+* **Nothing may be posted for a month that has not started, or after the month somebody
+  left.** "Next payable" is clamped to the current month, and when that lands on a
+  part-paid month the figure offered is what is still outstanding on that row rather than
+  another whole month's salary.
+
+`CompleteHandover` now opens the leaver's final settlement (`CreateFinalSettlement`) with the
+clearance figures in the note — step 7 of offboarding-design §3.2.
+
+Expenses were built in P20 (payroll is P21). Four decisions:
+
+* **`employee_id` is the only discriminator.** NULL means the office paid it, a value means
+  it is charged to that person. Legacy needed two category tables and three nullable foreign
+  keys — `cost_cat_id`, `employee_cost_cat_id`, `employee_id` — to say the same thing
+  (database-review §2.3). The office/employee "view" on the list is one `WHERE` on that column.
+* **A category carries a scope, and it is enforced on both sides.** An office category cannot
+  be charged to a person and a field category cannot be booked against the office
+  (`ResolveExpenseCategory`); the form only offers what fits, and the server checks again,
+  including when an edit flips a row from one side to the other. Narrowing the scope of a
+  category rows already rely on is refused, and says how many are in the way.
+* **Office rows are company-wide, claims follow the subtree.** `Expense::scopeVisibleTo`
+  shows every office row to anybody holding `expenses.view`, but a claim only to the chain
+  above that employee — the same two-key thinking as offboarding-design §4.
+* **A deleted expense keeps its receipt.** The row is soft-deleted and the file stays: a
+  claim that was withdrawn is still evidence of what somebody handed in. Deleting a category
+  counts soft-deleted expenses too, so a restore can never land on a missing category.
 
 ### 3.10 Reports & dashboard
 12 report classes replace 28 controller methods (`SalesSummary`, `SalesByCustomer`,
@@ -318,18 +532,126 @@ Products built in P12. Four decisions:
 `CashFlow`, `ProductProfitability`) — each with date range / days, hierarchy scoping, Excel
 export, print. Dashboard widgets via Inertia **deferred props**, cached 5 min.
 
+Built in P22. Five decisions:
+
+* **Every report answers the same four questions** — columns, rows, totals, headline figures
+  (`App\Support\Reports\Report`). That one interface is why twelve reports need one page,
+  one CSV writer and one print view; legacy's twenty-eight methods each carried their own
+  copy of the date handling and their own table markup.
+* **Apportioned figures are reconciled to the documents.** Splitting an invoice's discount
+  across its lines drifts by paisa, so `BaseReport::reconcile()` puts the difference on the
+  largest row — the same rule `DocumentTotals` uses inside an invoice. Product-wise revenue
+  therefore adds up to the sales figure exactly, which legacy's never did.
+* **Cost of goods is the price captured at sale time** (`invoice_lines.cost_price`), not the
+  value of stock bought in the same window. Legacy used the latter, so a month with a big
+  delivery showed a loss and the month that sold it showed a fortune.
+* **Two keys again, as in offboarding-design §4.** Sales are keyed on `invoices.employee_id`
+  (who sold it, never changes); dues and collections follow current customer ownership. The
+  employee report shows both columns side by side for exactly that reason.
+* **The cache is a version number, not tags.** The store is `database`, which has no tags, so
+  `ReportCache` versions every key and any write to an invoice, payment, expense, salary or
+  stock movement bumps it (`AppServiceProvider::configureReportCache`). A deploy is not a
+  write, so `php artisan reports:flush` belongs in the deploy script.
+
+The exit criterion — every report reconciling with the invoice and payment sums on the demo
+seed — is asserted in `tests/Feature/Reports/ReportTest.php`.
+
 ### 3.11 Notifications
-Database + Reverb (`private-user.{id}`); bell with unread count from shared props;
-paginated dropdown; prunable (read > 30 d, unread > 90 d).
+Database + Reverb (`private-App.Models.User.{id}`); bell with unread count from shared props;
+dropdown of the latest twenty; prunable (read > 30 d, unread > 90 d).
+
+Built in P18. Four decisions:
+
+* **The bell is written inline, everything that leaves the building is queued.** Every
+  notification is `ShouldQueue`, but `viaConnections()` keeps `database` and `broadcast` on
+  `sync` and sends `mail` to the queue. A notification nobody can see until a worker runs is
+  not a notification; an invoice that waits on SMTP is the legacy bug being replaced.
+* **Broadcasting needs a worker.** `ShouldBroadcast` events are queued by Laravel, so the
+  live push arrives once `queue:work` is running — without it the bell still updates on the
+  next page visit. Both `reverb:start` and a worker belong in the deployment (§8).
+* **`App\Models\Notification` subclasses Laravel's `DatabaseNotification` for one reason:
+  pruning.** The framework's model never expires, and `model:prune` runs nightly at 02:15.
+* **The channel authorises the owner and nobody else**, and a deactivated account is refused
+  at the door before it ever reaches the channel.
 
 ### 3.12 SMS
-`SmsGateway` interface (`MimSms`, `Log` driver); credentials in Settings; templates with
+`SmsGateway` interface (`MimSms`, `Log` driver); credentials in the environment, never in the
+database (the settings screen only says whether the box has them); templates with
 placeholders; broadcast to selected / all / filtered customers, **queued in chunks**, rate
 limited; history with gateway response, summary, balance.
 
-### 3.13 Settings
+The gateway, the templates and the two automatic messages were built in P18; the broadcast
+screens, the template editor and the history came in P23. Four decisions from P18:
+
+* **`log` is the default driver.** It writes the message to the log and reports success, so
+  development, tests and staging need no credentials — and nobody texts a real shopkeeper
+  from a seeded database by accident.
+* **A missing credential is a failed row, not an exception.** Legacy let a gateway problem
+  surface in the middle of writing an invoice; here the send is a queued job whose result is
+  stored on the `sms_messages` row, and the sale is never affected.
+* **The two hard-coded legacy messages are templates now** (`invoice_created`,
+  `payment_received`), rendered by `SmsTemplateRenderer` with `{placeholders}` filled from
+  the document. An unfilled placeholder is dropped rather than texted as literal braces.
+* **Only the template text is cached, never the model.** A cached Eloquent model came back
+  as `__PHP_Incomplete_Class` and broke invoice creation with a 500 — caught by the browser
+  drive, fixed by caching the string.
+
+And four more from P23:
+
+* **The audience is a value object, and it is the guard.** `SmsAudience` applies the three
+  rules legacy's broadcast endpoint had none of: SMS switched on, a number the gateway can
+  actually dial, and inside the sender's own hierarchy. A "filtered" audience that narrows
+  nothing counts as everybody, so it needs `sms.send-all` like the explicit choice does.
+* **The count is shown before the send, not after.** The broadcast screen asks the server how
+  many customers would really be texted and puts that number on the button. On the demo data
+  it reads 29 of 40 — the eleven with unusable numbers are excluded, which is exactly the
+  thing an operator needs to see before pressing send.
+* **Nothing is sent from the web request.** The audience is split into chunks of 200 and
+  handed to the queue (`SendSmsChunk`), which writes the rows and queues one `SendSms` each.
+  Legacy looped over every customer inside the request and timed out. Personalisation
+  (`{customer_name}`, `{customer_code}`, `{due}`) happens in the chunk, where reading a
+  balance per customer is affordable.
+* **A system template may be reworded, never deleted.** `invoice_created` and
+  `payment_received` are looked up by key when an invoice or a payment is written, so the
+  policy refuses to delete a keyed row and the editor says to switch it off instead. Every
+  save forgets the renderer's ten-minute cache, or a corrected message would keep going out
+  wrong.
+
+### 3.13 Settings, licence and backups
 Company profile & logo, numbering (prefixes, next numbers), low-stock threshold, order
-approval switches, SMS gateway, mail test, licence status, backup download.
+approval switches, SMS gateway, mail test, licence status, backup download. Six decisions
+from P24:
+
+* **A setting is only a setting if something reads it.** Every key on the screen has a
+  consumer: the company block is what `App\Support\CompanyProfile` puts on every printed
+  document (it was `config('app.name')`, so changing the letterhead meant editing `.env` and
+  redeploying), the threshold is the default a new product starts with, the approval switches
+  are read by `SaveOrder`, `OrderApprovers` and `InvoicePolicy`. Keys nobody reads were not
+  added.
+* **Only a known key can be written.** `SaveSettings::KEYS` is the whole list, with the type
+  each value is read as. A crafted request cannot invent `licence.key` or `app.debug` and
+  have the application later believe it.
+* **Numbering saves on its own, and only goes up.** A counter that has issued a number never
+  issues it again, so `UpdateNumbering` refuses a lower `next` and says what the counter is
+  already at. Legacy reset invoice numbers every financial year, which is precisely how two
+  invoices came to share one number (database-review §2.1). Raising it is allowed — that is
+  what the ETL does after importing legacy documents.
+* **Credentials stay in the environment.** The SMS page says which gateway is configured and
+  whether this box has an API key; it never shows the key and never stores one in the
+  database. The mail test sends to the signed-in user's own address, so the company's server
+  cannot be used to mail a stranger.
+* **The licence is checked on the server, offline, and it forgives.** A key is a small JSON
+  payload signed with Ed25519; the installation only ever verifies, so a licence cannot be
+  minted on the customer's box and no network call is needed. A fresh install runs for
+  `trial_days` (ETL, UAT and training happen there) and an expired key keeps working for
+  `grace_days` with a banner — a renewal late in the post must not stop the sales day. Only
+  the signature is cached; the dates are compared every request, so a licence expires on the
+  day it expires. When it does block, everything redirects to the licence screen, which any
+  signed-in user may read, so "why has the system stopped?" is answered on screen.
+* **A backup is the whole company in one file.** It goes to a private disk, is queued rather
+  than run in the request, and is served only through the controller behind `system.backups`,
+  and only for a name that is really in the list. `Pulse` was left out: the box runs one
+  application and Flare/Sentry already covers what it would show.
 
 ---
 
@@ -348,7 +670,7 @@ approval switches, SMS gateway, mail test, licence status, backup download.
 | `brands`, `categories` | |
 | `products` | `+ flat_price`, `low_stock_threshold`, `archived_at`; `quantity` cached |
 | `stock_movements` | unified ledger (replaces `stock_in_outs`) |
-| `orders`, `order_lines` | `order_no` unique, `status pending/approved/rejected/cancelled/invoiced`, `submitted_at`, `approved_by/at`, `rejected_by/at`, `rejection_reason`, `approval_note`, `approved_over_limit`, `cancelled_at`; the invoice is reached via the unique `invoices.order_id` (no circular FK) |
+| `orders`, `order_lines` | `order_no` unique, `status pending/approved/rejected/cancelled/invoiced`, `submitted_at`, `escalated_at`, `approved_by/at`, `rejected_by/at`, `rejection_reason`, `approval_note`, `approved_over_limit`, `cancelled_at`; the invoice is reached via the unique `invoices.order_id` (no circular FK) |
 | `invoices`, `invoice_lines` | `invoice_no` unique, `order_id`, `type sale|opening`, `cost_price` on lines, soft deletes |
 | `payments`, `payment_allocations` | direction + morph counterparty |
 | `expense_categories`, `expenses` | merged |
@@ -369,8 +691,8 @@ transactional tables, indexes per `database-review.md` §3.8.
 | `AppLayout` | Sidebar from `nav.ts` filtered by `useCan`; topbar with bell, approvals badge, user menu; flash toasts |
 | `DataTable` | TanStack Table, server-side pagination/sort/filter via URL, column visibility, row actions, export |
 | `Field` + inputs | shadcn inputs wired for `<Form>` and `useForm`; `MoneyInput` (2 dp, no float maths), `DateInput`/`MonthInput` (native `date`/`month` inputs — reliable on field phones, no calendar library), `SelectField`, `ImageUpload` |
-| `Combobox` pickers | Async customer / product / employee search (session-protected JSON lookups — the only JSON endpoints) |
-| `LineItemsEditor` | Shared by Order and Invoice forms; live totals mirror server rounding |
+| `Combobox` pickers | Async customer / product / employee / supplier search (session-protected JSON lookups — the only JSON endpoints), wrapped as `ProductPicker`, `CustomerPicker`, `EmployeePicker`, `SupplierPicker` so no page writes its own fetch |
+| `LineItemsEditor` + `TotalsPanel` | Shared by Order and Invoice forms; every figure comes from `lib/totals.ts`, the mirror of `App\Support\Sales\DocumentTotals` |
 | `PermissionMatrix` | Role matrix and user override (tri-state) |
 | `Can`, `useCan` | Permission gate from shared props |
 | `Timeline` | Order / handover history |
@@ -414,14 +736,67 @@ against a copy before the real cut-over.
 | `payments` (supplier) | `payments(out)` | |
 | `costs` + both category tables | `expenses`, `expense_categories` | merged with `scope` |
 | `salaries` | `salaries` | `month_year` → `DATE` |
-| `sms_templates`, `sms_histories` | `sms_templates`, `sms_messages` | |
-| `orders` (3 open rows) | recreated by hand as `pending` | |
+| `sms_templates` | `sms_templates` | no `sms_histories` table exists in the dump |
+| `orders` (2 open rows) | `orders`, `order_lines` | only `pending`/`active` come across, as `pending`; closed ones stay behind |
 | `notifications`, `personal_access_tokens` | — | not migrated |
 
-**Reconciliation report** (all green before cut-over): per-customer due (legacy formula vs
-v2 derived, ≤ 0.01), per-product stock (`quantity` vs `Σ qty_delta`), counts and sums per
-table, invoices per employee per month, 20 printed invoices spot-checked, every
-`hierarchy:check` invariant.
+**Reconciliation report** — `php artisan legacy:reconcile`, exits non-zero on any failure:
+counts and money per table, per-customer due (legacy `old_due + Σ invoices − Σ payments` vs
+v2 `billed − received`, ≤ 0.01), per-product stock (`quantity` vs `Σ qty_delta`), invoices
+per officer per month, invoice-number uniqueness, and every `hierarchy:check` invariant.
+Three outcomes: **ok**, **note** (an expected difference, explained) and **fail**.
+
+Nine decisions from P25, taken against the real 2,544-invoice dump:
+
+* **`legacy_id` is what makes a re-run safe.** Every mapper finds its row again by the legacy
+  key (or a natural one where legacy had none — `orders` and `stock_movements` needed a
+  column adding), so the ETL updates instead of duplicating and a run that dies at invoice
+  2,000 is simply started again. Three dry runs and a cut-over are then the same command.
+  Verified: the second run leaves every count and every invoice number identical.
+* **Numbering is assigned once and never revisited.** Legacy reset `invoiceId` each financial
+  year, so 2,544 invoices shared 64 numbers — "RAINVO-01" names sixty different documents.
+  Openings and sales are sorted by date and numbered from the global sequence in one pass;
+  an invoice that already has a number keeps it, so a second run cannot renumber the book.
+  The old string stays in `legacy_invoice_no` for the customer holding a paper copy.
+* **Money is compared row by row, not with `SUM()`.** Legacy stored money in `double`, and
+  six invoices carry half a paisa (4,668.125). `DECIMAL(15,2)` cannot hold that, so the book
+  moves by three paisa in total — reported as a note rather than hidden, because "the totals
+  differ" needs an answer before anybody signs off. (`App\Support\Money` also learned to
+  accept `2.0E-9`, which is what a `double` column hands you.)
+* **Legacy's own arithmetic is not corrected.** Thirteen invoices were billed something other
+  than `total_price − discount − less`. The amount the customer was actually asked to pay is
+  what migrates; the report lists which ones so somebody can look.
+* **Nobody loses access, and nobody is locked out of the new half.** A user's legacy page
+  list becomes `allow = mapped − role defaults` and `deny = (role defaults ∩ what legacy
+  could grant) − mapped`. The intersection matters: settings, backups, exports, approvals and
+  offboarding have no legacy counterpart, so nobody could have held them — denying them would
+  have left the administrator unable to open the settings screen on day one. They follow the
+  role instead. Password hashes are copied as they are, so nobody resets forty accounts on
+  cut-over night.
+* **A customer nobody can see is the thing to prevent.** Twenty-three of sixty employees are
+  `deactive` in legacy while their shops still point at them. Each such customer goes to the
+  nearest **active** manager above the departed officer, flagged `is_caretaker`; when a whole
+  line has left, to the most senior active person. The history is written as two rows — the
+  original ownership closed on the officer's last working day, the caretaker's open from it —
+  so the caretaker shows its true age on the hierarchy report instead of looking as though
+  somebody has held the shop since it opened.
+* **The stock ledger gains the half legacy never had.** `stock_in_outs` held purchases and
+  odds and ends; sales decremented `products.quantity` in place. Every sale line now writes
+  the movement that took the goods out, **bonus units included**, with `cost_price` from the
+  last purchase before that sale — which is what makes profit reportable at all. The cached
+  quantity is then rebuilt from the ledger rather than copied.
+* **Everything derived is derived, not copied.** `employees.credit_limit` and
+  `products.quantity` are recomputed at the end of the run (`credit:rebuild`, `stock:rebuild`)
+  so the numbers come out of the data instead of out of whatever legacy last wrote.
+* **The migration is not written to the audit trail.** Forty thousand rows arriving is not
+  something a person did, and it would bury the entries that are.
+
+**What the dry run found in the data** (all reported, none blocking): 14 employees are
+duplicated — the same person entered twice, once deactivated — and share a phone number, so
+the second record keeps the number exactly as it was typed rather than having a suffix
+appended to a working number; 4 customer numbers no gateway can dial; 4 employees report to
+nobody; 10 shops are with a caretaker awaiting reassignment. A full run over the real dump
+takes **12 seconds**.
 
 **Cut-over evening:** legacy read-only → final ETL → reconciliation → switch → legacy kept
 read-only 30 days → decommission.
@@ -436,9 +811,11 @@ read-only 30 days → decommission.
 | Config | `.env` never committed; runtime settings in `settings` table |
 | Queue | `database` + `queue:work` under Supervisor; Redis/Horizon when broadcasts grow |
 | Realtime | Reverb behind Nginx |
-| Scheduler | prune notifications, `credit:rebuild`, `stock:reconcile`, `hierarchy:check`, order escalation, backups |
-| Backups | nightly DB + uploads off-box (`spatie/laravel-backup`) |
-| Deploy | Forge/Ploi or `deploy.sh`: `composer install --no-dev`, `npm ci && npm run build`, `migrate --force`, `permissions:sync`, `optimize`, restart workers/Reverb |
+| Scheduler | `credit:rebuild` 01:30, `stock:reconcile` 01:45, `model:prune` 02:15 (notifications), `stock:low-stock-digest` 07:00, `orders:escalate` hourly, `hierarchy:check` 02:00 (exits non-zero on a broken invariant), `backup:clean` 02:30, `backup:run` 03:00 |
+| Workers | `queue:work` (mail, SMS, broadcast events, `backup:run`) and `reverb:start` (websocket). Without the worker the bell updates on the next page visit instead of live; without Reverb it still updates, just never pushes. |
+| Backups | nightly DB + `storage/app/public` to the private `backups` disk (`spatie/laravel-backup`), then copied off-box. `mysqldump` is a separate program: on Windows, and on any box where it is not on the PATH, set `DB_DUMP_BINARY_PATH` or the nightly backup fails silently until somebody looks. |
+| Licence | signed key in `settings` (`licence.key`) or `LICENCE_KEY`; verified offline against the public key in `config/licence.php`. `licence:show` exits non-zero when the installation is blocked — put it in the deploy script. |
+| Deploy | Forge/Ploi or `deploy.sh`: `composer install --no-dev`, `npm ci && npm run build`, `migrate --force`, `permissions:sync`, `reports:flush`, `licence:show`, `optimize`, restart workers/Reverb |
 | Monitoring | Pulse (optional), Flare/Sentry |
 | Security | HTTPS, `Secure`/`HttpOnly`/`SameSite` cookies, login + SMS rate limits, encrypted NID, **no dumps in git** |
 
@@ -471,6 +848,49 @@ read-only 30 days → decommission.
 
 ---
 
+## 10a. Hardening and acceptance (P26)
+
+Measured on the **migrated** database — 663 customers, 2,694 invoices, 6,054 lines, 1,045
+payments — because that is the only volume that tells the truth. Six decisions:
+
+* **A report is built once.** A report page asks for rows, totals and a summary, and the last
+  two are made of the first, so every report was being computed three times. `BaseReport::rows()`
+  is now final and memoised and each report implements `build()`. Due invoices went from
+  **65,835 queries and 3.2 s to 10 queries and 0.8 s**.
+* **A permission check must not touch the cache store.** `deniedPermissionNames()` read the
+  cache on every `can()`, and a list calls `can()` once per row — with the database cache
+  driver that was a SQL query per check, 400 on a report page. It is held for the request now;
+  the shared cache still holds it between requests.
+* **A loaded aggregate can be null.** `withSum('allocations as allocated')` yields `null`, not
+  zero, on an invoice nobody has paid anything towards, so reading the value instead of testing
+  the key sent the due calculation back to the database per row. The key is tested now.
+* **Ask once for everybody.** The employee report asked `CustomerBalance::dueFor()` per row.
+  `dueByOwner()` answers for every officer in two queries: 86 queries down to 14.
+* **Two indexes were missing where a unique key looked like one.** `payment_allocations` is
+  unique on `(payment_id, invoice_id)` but every due asks by `invoice_id`; `invoice_lines` is
+  unique on `(invoice_id, product_id)` but every product report asks by `product_id`. A
+  composite index does not serve a lookup on its second column.
+* **Scripts get a nonce; styles keep `'unsafe-inline'`.** `SecurityHeaders` sets a
+  Content-Security-Policy with a per-request nonce, plus `nosniff`, `DENY`, a referrer policy,
+  a permissions policy and HSTS over HTTPS only. Locking scripts down is what stops a customer
+  name from becoming a script; pretending to lock styles down would only break the UI kit,
+  which sets element styles directly.
+
+**After the pass, every page is 5–17 queries.** The slowest screen is due invoices at ~800 ms
+for 1,396 unpaid invoices; every other page is under 350 ms.
+
+**Verified rather than asserted:** a database backup of the migrated data was restored into a
+scratch database and matched the original exactly (663 customers, 2,694 invoices, 6,054 lines,
+1,045 payments, 2,163 allocations, 33,762,558.86 billed, 18,844,605.60 received). The
+procedure is [`runbook.md`](./runbook.md) §4.
+
+**Acceptance** is [`uat-plan.md`](./uat-plan.md): a script per role against migrated data, a
+defect sheet with severities, six decisions the company has to take before cut-over (§2a), and
+a sign-off table. Each role's script was dry-run against the migrated data first, so the
+testers meet a system that works rather than one that 500s on the second screen.
+
+---
+
 ## 11. Feature-parity checklist
 
 | Legacy | v2 | Note |
@@ -493,6 +913,6 @@ read-only 30 days → decommission.
 | SMS anyone/everyone/templates/history/balance | ✅ | queued, templated |
 | Notifications (poll + sound) | 🔁 | Reverb push |
 | Offline `localStorage` cache | ❌ | §0 #12 |
-| `SystemSecurity` client socket | 🔁 | server middleware |
+| `SystemSecurity` client socket | 🔁 | `EnsureLicenceIsValid`: signed key, verified on the server, cache + grace (§3.13) |
 | ToDo app, theme toggler, Sales(backup) | ❌ | dead code |
 | **New:** handover wizard, approvals inbox, audit log, settings, activity history | ➕ | from the design docs |
