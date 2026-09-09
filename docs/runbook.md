@@ -14,7 +14,7 @@ Companion documents: [`setup.md`](./setup.md) (first install), [`uat-plan.md`](.
 | --- | --- | --- |
 | Web | PHP-FPM behind Nginx | Nothing works |
 | Queue worker | `php artisan queue:work` under Supervisor | Mail, SMS, notifications and backups queue up and never happen |
-| Scheduler | `* * * * * php artisan schedule:run` | Nightly credit rebuild, stock reconcile, low-stock digest, escalations, hierarchy check and backups never run |
+| Scheduler | `* * * * * php artisan schedule:run` | Nightly stock reconcile, low-stock digest, escalations, hierarchy check and backups never run |
 | Websockets | `php artisan reverb:start` | The bell updates on the next page load instead of live — everything else is fine |
 
 Check all four in one go:
@@ -133,7 +133,6 @@ Then, whatever was restored:
 
 ```bash
 php artisan stock:rebuild      # cached quantities from the ledger
-php artisan credit:rebuild     # employee limits from the customer book
 php artisan reports:flush
 php artisan hierarchy:check    # exits non-zero if the tree is broken
 ```
@@ -155,7 +154,7 @@ Rehearse it again after any change to the backup configuration.
 | Notifications are not arriving | The queue worker. `php artisan queue:monitor default`; failed jobs in `php artisan queue:failed` |
 | SMS is not going out | `/sms` shows the gateway's own answer per message. No credentials on the box → the settings screen says so |
 | A product's stock looks wrong | `php artisan stock:reconcile` — it reports drift and exits non-zero; `stock:rebuild` fixes the cache from the ledger |
-| A credit limit looks wrong | `php artisan credit:rebuild` — the limits are derived, never typed |
+| A credit limit looks wrong | It is typed, not calculated: an employee's on their edit form, a customer's on theirs. `/activity-log` says who last changed it |
 | Reports show yesterday's numbers | `php artisan reports:flush`. Writes invalidate the cache; a deploy does not |
 | A page is slow | `php artisan pail` while reloading it; the query log shows what it is doing |
 

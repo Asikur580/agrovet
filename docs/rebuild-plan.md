@@ -75,7 +75,7 @@ problems documented in the reviews, and ends with a one-time migration of the li
 ### Keep
 
 * Screen set and navigation; same flows (order → approval → invoice → payment).
-* Business rules: hierarchy scoping; cascading credit limits; employee and customer credit
+* Business rules: hierarchy scoping; employee and customer credit
   gates; `.50↓ / .51↑` rounding; TP vs flat pricing; bonus quantity; order → invoice;
   SMS on invoice and payment; `sms_enabled`; print tracking; cash/credit sale types.
 * Customer code `RA18/…` and invoice prefix `RAINVO-` (now padded and unique).
@@ -193,7 +193,12 @@ Built in P09, with four decisions worth recording:
   contacts, territory/district, encrypted NID, photo, basic salary, derived `credit_limit`,
   lifecycle fields. `reporting_lines` keeps who-reported-to-whom history.
 * `AssignManager` enforces officer→manager→rsm and the cycle guard.
-* **Credit limit**: `RecalculateCreditLimit` cascades upward; nightly `credit:rebuild`.
+* **Credit limit**: set on the employee form and on the customer, never derived. Legacy had
+  the field on both forms *and* `recalculateCreditLimit()` overwriting the employee one from
+  the sum of their customers, so a number somebody entered survived until the next customer
+  edit. v2 keeps the fields and drops the overwriting: what is entered is the ceiling until
+  somebody edits it. The exposure still moves with the customers — a handover changes what a
+  person is carrying, never what they are allowed to carry.
 * **Leaving / promotion / leave = handover wizard**: customers, subordinates, open orders
   reassigned (or parked with a **caretaker manager** / **Head Office**) before deactivation;
   clearance checklist; final settlement; `hierarchy:check` nightly; reactivation.
@@ -267,7 +272,7 @@ Customers built in P10. Five decisions worth recording:
   reconciled with the invoices behind it (database-review §2.5). As an invoice it is
   counted by the same query as everything else and a payment can be allocated against it.
 * **Ownership moves only through `ReassignCustomer`**, which writes the
-  `customer_assignments` row and lets the credit roll-up move the exposure between chains.
+  `customer_assignments` row; the exposure moves with the customer, the ceilings do not move.
   Several moves on the same day collapse to one open row rather than leaving rows that end
   before they start; each move is still recorded in the activity log.
 * **A manager may own a customer only as a caretaker** (offboarding-design §6). The flag is
@@ -786,8 +791,9 @@ Nine decisions from P25, taken against the real 2,544-invoice dump:
   last purchase before that sale — which is what makes profit reportable at all. The cached
   quantity is then rebuilt from the ledger rather than copied.
 * **Everything derived is derived, not copied.** `employees.credit_limit` and
-  `products.quantity` are recomputed at the end of the run (`credit:rebuild`, `stock:rebuild`)
-  so the numbers come out of the data instead of out of whatever legacy last wrote.
+  `products.quantity` is recomputed at the end of the run (`stock:rebuild`) so the number
+  comes out of the ledger instead of out of whatever legacy last wrote. `credit_limit` is
+  copied as it stands — it is typed in both systems.
 * **The migration is not written to the audit trail.** Forty thousand rows arriving is not
   something a person did, and it would bury the entries that are.
 
@@ -811,7 +817,7 @@ read-only 30 days → decommission.
 | Config | `.env` never committed; runtime settings in `settings` table |
 | Queue | `database` + `queue:work` under Supervisor; Redis/Horizon when broadcasts grow |
 | Realtime | Reverb behind Nginx |
-| Scheduler | `credit:rebuild` 01:30, `stock:reconcile` 01:45, `model:prune` 02:15 (notifications), `stock:low-stock-digest` 07:00, `orders:escalate` hourly, `hierarchy:check` 02:00 (exits non-zero on a broken invariant), `backup:clean` 02:30, `backup:run` 03:00 |
+| Scheduler | `stock:reconcile` 01:45, `model:prune` 02:15 (notifications), `stock:low-stock-digest` 07:00, `orders:escalate` hourly, `hierarchy:check` 02:00 (exits non-zero on a broken invariant), `backup:clean` 02:30, `backup:run` 03:00 |
 | Workers | `queue:work` (mail, SMS, broadcast events, `backup:run`) and `reverb:start` (websocket). Without the worker the bell updates on the next page visit instead of live; without Reverb it still updates, just never pushes. |
 | Backups | nightly DB + `storage/app/public` to the private `backups` disk (`spatie/laravel-backup`), then copied off-box. `mysqldump` is a separate program: on Windows, and on any box where it is not on the PATH, set `DB_DUMP_BINARY_PATH` or the nightly backup fails silently until somebody looks. |
 | Licence | signed key in `settings` (`licence.key`) or `LICENCE_KEY`; verified offline against the public key in `config/licence.php`. `licence:show` exits non-zero when the installation is blocked — put it in the deploy script. |

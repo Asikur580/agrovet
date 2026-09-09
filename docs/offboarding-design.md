@@ -24,7 +24,7 @@ workflow — a **handover** — that must complete before the account is deactiv
 | Open orders (`pending` / `approved`, not invoiced) | ✅ | (rare) | – | reassigned or cancelled |
 | Orders awaiting *their* approval | – | ✅ | – | nothing to move — approval is by role + scope, so the new manager sees them |
 | Receivables on customers they served | ✅ | – | – | follow the **customer** to the successor (§4) |
-| Credit-limit roll-ups | ✅ | ✅ | ✅ | recalculated for the old chain and the new chain |
+| Credit exposure | ✅ | ✅ | ✅ | moves with the customers; each person's own limit is set on their record and never changes here |
 | Notification routing (manager mail/notify) | – | ✅ | – | resolved from `manager_id` at send time — automatic after reassignment |
 | Login, sessions, permissions | ✅ | ✅ | ✅ | user deactivated, sessions invalidated; roles/permissions kept for audit |
 | Payroll: last salary, advances, dues | ✅ | ✅ | ✅ | final settlement entry in payroll |
@@ -215,8 +215,8 @@ Therefore in v2:
 2. Open orders → follow their customer's new officer, or cancel.
 3. Receivables follow the customers (§4). A "Transferred customers with dues" report is
    generated for the successor.
-4. Credit: old manager's roll-up drops the leaver; successor's limit and usage rise;
-   successor's manager/RSM roll-ups recalc.
+4. Credit: what the successor is carrying rises by the dues of the shops they take on. Step
+   4 of the wizard shows that against the successor's own limit before anything is applied.
 5. Clearance: cash-in-hand, advances, assets. Final settlement in payroll.
 6. Deactivate user; keep employee row and all history.
 
@@ -225,7 +225,7 @@ Therefore in v2:
 2. Customers are untouched (they belong to officers).
 3. Orders awaiting approval: nothing to move; the new manager (or admin) sees them via scope.
 4. Notifications/emails for "manager" resolve from `manager_id` at send time → automatic.
-5. Credit roll-ups: leaver → 0; new manager += Σ officers' limits; if the RSM changed,
+5. Credit exposure follows the customers; nobody's limit changes. If the RSM changed,
    both RSMs recalc.
 6. Deactivate.
 
@@ -343,7 +343,7 @@ The nine scenarios in §11 are covered by `tests/Feature/Handovers/HandoverTest.
 
 | Scenario | Assert |
 | --- | --- |
-| Officer handover splits customers to two officers | ownership, history rows, open orders follow, credit roll-ups for both chains, leaver deactivated, user cannot log in |
+| Officer handover splits customers to two officers | ownership, history rows and open orders follow; both successors' exposure rises; leaver deactivated, user cannot log in |
 | Manager handover with no successor | officers → Head Office, orders still approvable by admin, widget shows the team |
 | Officer handover with no officer available | manager caretaker, badge, credit order needs manager approval |
 | Attempt to complete with one customer unassigned | 422, nothing changed (transaction) |

@@ -27,7 +27,7 @@ class InvoiceCreatedMail extends Mailable
     public function build()
     {
         return $this->subject('New Invoice Created: ' . $this->invoice->invoiceId)
-                    ->markdown('emails.invoices.created')
+                    ->markdown('emails.invoice-created')
                     ->with([
                         'invoice' => $this->invoice,
                         'url' => "https://ra.s3cbd.com/invoice/" . $this->invoice->id
