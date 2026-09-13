@@ -143,8 +143,11 @@ for hierarchy logic to work.
   the employee currently owns (`customers.employee_id`), the same as `GET /customers`.
   `total_due` = `old_due + Σ invoices − Σ payments`, all time — `from_date`/`to_date` filter
   only `total_purchase` and `total_payment`.
-* `credit_use` / `credit_due` still use `invoices.employee_id` / `payments.employee_id`
-  (credit sales only), matching the credit-limit check on order and invoice create.
+* `credit_use` = `total_due` + pending credit orders (`App\Services\CreditUsageService`),
+  all time. `credit_due` = `credit_limit − credit_use`.
+* Order and invoice create/update block credit sales with the same formula only when
+  `CREDIT_DUE_BASED=true` (`config/credit.php`, default `false`). While it is off, the
+  legacy checks run.
 
 ---
 

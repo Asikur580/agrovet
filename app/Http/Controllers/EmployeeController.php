@@ -6,6 +6,7 @@ use Exception;
 use Throwable;
 use App\Models\User;
 use App\Models\Employee;
+use App\Services\CreditUsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -231,53 +232,11 @@ class EmployeeController extends Controller
                 $paymentByOfficer = $allPaymentByOfficer;
             }
 
-            $report = $employees->map(function ($employee) use ($fromDate, $toDate, $oldDueByOfficer, $allPurchaseByOfficer, $allPaymentByOfficer, $purchaseByOfficer, $paymentByOfficer) {
-                // Total credit purchase from invoices. Cash sales never consume the credit limit.
-                $purchaseQuery = DB::table('invoices')
-                    ->where('employee_id', $employee->id)
-                    ->where('sale_type', 'credit');
+            // Credit use is a running balance plus pending credit orders, so the date range does not apply to it.
+            $creditUseByOfficer = app(CreditUsageService::class)->byOfficer();
 
-                if ($fromDate && $toDate) {
-                    $purchaseQuery->whereBetween('sale_date', [$fromDate, $toDate]);
-                }
-
-                $totalCreditPurchase = $purchaseQuery->sum('grand_total');
-
-                // Total payment
-                $paymentQuery = DB::table('payments')
-                    ->where('employee_id', $employee->id);
-
-                if ($fromDate && $toDate) {
-                    $paymentQuery->whereBetween('payment_date', [$fromDate, $toDate]);
-                }
-
-                $totalPayment = $paymentQuery->sum('amount');
-
-                $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
-
-                // Total amount from pending orders (not yet invoiced)
-                $orderQuery = DB::table('orders')
-                    ->where('employee_id', $employee->id)
-                    ->where('orders.order_type', 'credit');
-
-                if ($fromDate && $toDate) {
-                    $orderQuery->whereBetween('order_date', [$fromDate, $toDate]);
-                }
-
-                $creditUseFromOrders = $orderQuery->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                    ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
-
-                $creditUse = $creditUseFromInvoices + $creditUseFromOrders;
-
-                //  Total Sale (invoice based)
-                $saleQuery = DB::table('invoices')
-                    ->where('employee_id', $employee->id);
-
-                if ($fromDate && $toDate) {
-                    $saleQuery->whereBetween('sale_date', [$fromDate, $toDate]);
-                }
-
-                $totalSale = $saleQuery->sum('grand_total'); // invoice total column
+            $report = $employees->map(function ($employee) use ($oldDueByOfficer, $allPurchaseByOfficer, $allPaymentByOfficer, $purchaseByOfficer, $paymentByOfficer, $creditUseByOfficer) {
+                $creditUse = $creditUseByOfficer[$employee->id] ?? 0;
                 $creditLimit = $employee->credit_limit ?? 0;
                 $creditDue = $creditLimit - $creditUse;
 

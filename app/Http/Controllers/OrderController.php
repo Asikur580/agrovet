@@ -18,6 +18,7 @@ use App\Mail\OrderCreatedMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Notifications\OrderNotification;
+use App\Services\CreditUsageService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrderController extends Controller
@@ -196,7 +197,10 @@ class OrderController extends Controller
 
             $creditLimitUsage = $creditUseFromInvoices + $totalOrderAmount + $newTotalOrderAmount;
 
-            if ($validated['order_type'] == 'credit') {
+            $dueBasedChecks = config('credit.due_based_checks');
+
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validated['order_type'] == 'credit') {
                 if ($creditLimitUsage > $employee->credit_limit) {
                     return response()->json([
                         'status' => false,
@@ -222,7 +226,8 @@ class OrderController extends Controller
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $newTotalOrderAmount;
 
-            if($validated['order_type'] == 'credit'){
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validated['order_type'] == 'credit') {
                 if ($custCreditUsage > $customerCreditLimit) {
                     return response()->json([
                         'status' => false,
@@ -231,6 +236,19 @@ class OrderController extends Controller
                     ], 422);
                 }
             }
+
+            if ($dueBasedChecks && $validated['order_type'] == 'credit') {
+                $exceeded = app(CreditUsageService::class)->exceededLimit($customer, $newTotalOrderAmount);
+
+                if ($exceeded) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Order exceeds {$exceeded} credit limit.",
+                        'data' => null
+                    ], 422);
+                }
+            }
+
             // Create order
             $order = Order::create([
                 'cust_id' => $validated['cust_id'],
@@ -393,7 +411,10 @@ class OrderController extends Controller
             // Calculate the adjusted credit limit after the update
             $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $updatedOrderAmount;
 
-            if ($validated['order_type'] == 'credit') {
+            $dueBasedChecks = config('credit.due_based_checks');
+
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validated['order_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {
                     return response()->json([
                         'status' => false,
@@ -421,13 +442,27 @@ class OrderController extends Controller
             $custCurrentDue = ($customer->old_due + $custTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount + $updatedOrderAmount;
 
-            if($validated['order_type'] == 'credit'){
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validated['order_type'] == 'credit') {
                 if ($custCreditUsage > $customerCreditLimit) {
                     return response()->json([
                         'status' => false,
                         'message' => 'Updated order exceeds customer credit limit.',
                     'data' => null
                 ], 422);            
+                }
+            }
+
+            if ($dueBasedChecks && $validated['order_type'] == 'credit') {
+                // The order being edited is replaced by its new total, so it must not count twice.
+                $exceeded = app(CreditUsageService::class)->exceededLimit($customer, $updatedOrderAmount, excludeOrderId: (int) $id);
+
+                if ($exceeded) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Updated order exceeds {$exceeded} credit limit.",
+                        'data' => null
+                    ], 422);
                 }
             }
 

@@ -150,8 +150,8 @@ These are computed at query time — they are **not** stored (with the exception
 | Value | Formula | Where |
 | --- | --- | --- |
 | Customer due | `old_due + Σ invoices.grand_total − Σ payments.amount` | `CustomerController@index`, order/invoice credit checks |
-| Customer credit usage | `customer due + Σ pending-order value + new document total` | `OrderController`, `InvoiceController` |
-| Employee credit usage | `Σ invoices.due + Σ pending-order value + new document total` | `OrderController`, `InvoiceController` |
+| Customer credit usage | `customer due + Σ pending credit order value` | `CreditUsageService::forCustomer` |
+| Employee credit usage | `Σ due of customers the officer owns + Σ their pending credit order value` | `CreditUsageService::forOfficer` / `byOfficer` — credit report, profile, order/invoice checks when `CREDIT_DUE_BASED=true` |
 | Officer credit limit | `Σ customers.credit_limit` | `Employee::recalculateCreditLimit()` (**stored**) |
 | Manager / RSM credit limit | `Σ subordinates.credit_limit` | `Employee::recalculateCreditLimit()` (**stored**) |
 | Invoice grand total | `round(total_price − discount − less)`, `.50` down / `.51` up | `InvoiceController::calculateGrandTotal()` |

@@ -6,6 +6,7 @@ use Exception;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Relation;
+use App\Services\CreditUsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -56,27 +57,7 @@ class ProfileController extends Controller
 
                 // 5. Credit Metrics
                 $creditLimit = $employee->credit_limit ?? 0;
-
-                // Total credit purchase from invoices
-                $totalCreditPurchase = DB::table('invoices')
-                    ->where('employee_id', $employee->id)
-                    ->sum('grand_total');
-
-                // Total payment
-                $totalPayment = DB::table('payments')
-                    ->where('employee_id', $employee->id)
-                    ->sum('amount');
-
-                $creditUseFromInvoices = $totalCreditPurchase - $totalPayment;
-
-                // Total amount from pending orders (not yet invoiced)
-                $creditUseFromOrders = DB::table('orders')
-                    ->where('employee_id', $employee->id)
-                    ->where('orders.order_type', 'credit')
-                    ->join('order_products', 'orders.id', '=', 'order_products.order_id')
-                    ->sum(DB::raw('order_products.quantity * order_products.unit_price'));
-
-                $creditUse = $creditUseFromInvoices + $creditUseFromOrders;
+                $creditUse = app(CreditUsageService::class)->forOfficer($employee->id);
                 $creditAvailable = $creditLimit - $creditUse;
 
                 $metrics['credit_limit'] = number_format($creditLimit, 2, '.', '');

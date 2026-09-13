@@ -82,7 +82,8 @@ be a Manager, a Manager's superior **must** be an RSM.
 * **Soft deactivation** — `destroy` sets `status = 'deactive'` rather than deleting.
 * `credit_limit` is **never set manually** — always derived (see §4).
 * `GET /api/employees/credit-report` — per-employee credit limit, purchases, payments, due,
-  credit used and credit remaining, with optional `from_date`/`to_date`.
+  credit used and credit remaining, with optional `from_date`/`to_date` (purchases and
+  payments only; due and credit used are all-time balances). See §4 for the formula.
 * Self-deactivation is blocked.
 
 ### Users — `UserController`
@@ -104,7 +105,7 @@ block computed on the fly:
 | `subordinates_count` | rows in `relations` where `relation_id` = employee |
 | `sales_count` / `total_sales` | count / Σ `grand_total` of the employee's invoices |
 | `credit_limit` | `employees.credit_limit` |
-| `credit_use` | (Σ invoice `grand_total` − Σ payments) + Σ pending **credit** order value |
+| `credit_use` | Credit usage of the employee's customers (§4, `CreditUsageService::forOfficer`) |
 | `credit_available` | `credit_limit − credit_use` |
 
 `POST /api/profile/update` updates the linked employee record (name, phone, territory,
@@ -137,18 +138,30 @@ each superior recursively. It is triggered whenever the underlying figures can c
 
 ### Enforcement points
 
-Both `OrderController` and `InvoiceController` gate writes on two independent ceilings:
+**Credit usage** (`App\Services\CreditUsageService`):
+```
+usage = Σ customers.old_due
+      + Σ invoices.grand_total          (cash and credit)
+      − Σ payments.amount               (customer payments only)
+      + Σ pending credit order value    (status = pending, order_type credit or NULL)
+```
+Cash invoices count because `invoices.paid` is never filled: a cash sale stays owed until a
+payment row arrives, and payments are not linked to invoices. An officer's usage covers the
+customers they own now (`customers.employee_id`), whoever created the invoice or order. The
+credit report and the profile always show this number.
 
-**Employee ceiling (always checked):**
+**Enforcement** — order and invoice create/update, only when `sale_type` / `order_type` =
+`credit`. With `CREDIT_DUE_BASED=true` (`config/credit.php`):
 ```
-Σ invoice.due  +  Σ pending order value  +  new document total   ≤  employee.credit_limit
+officer usage   + new document total  ≤  officer.credit_limit     (officer = customer's owner)
+customer usage  + new document total  ≤  customer.credit_limit
 ```
+Invoice update leaves out the invoice being edited; order update leaves out the order being
+edited; invoicing an order leaves out that order.
 
-**Customer ceiling (checked only when `order_type` / `sale_type` = `credit`):**
-```
-(customer.old_due + Σ invoice.grand_total − Σ payments)
-      + Σ pending order value  +  new document total            ≤  customer.credit_limit
-```
+With `CREDIT_DUE_BASED=false` (default) the legacy checks run instead. They use the creator's
+`employee_id`, count only credit invoices in `InvoiceController` but all invoices in
+`OrderController`, and can report negative usage.
 
 Breaches return HTTP `422` and abort the transaction.
 

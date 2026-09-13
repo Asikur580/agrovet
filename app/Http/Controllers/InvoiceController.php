@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use App\Notifications\InvoiceNotification;
 use Illuminate\Support\Facades\Mail;
 use App\Services\SmsService;
+use App\Services\CreditUsageService;
 
 class InvoiceController extends Controller
 {
@@ -36,10 +37,12 @@ class InvoiceController extends Controller
         })->toArray();
     }
     protected $smsService;
+    protected $creditUsage;
 
-    public function __construct(SmsService $smsService)
+    public function __construct(SmsService $smsService, CreditUsageService $creditUsage)
     {
         $this->smsService = $smsService;
+        $this->creditUsage = $creditUsage;
     }
 
     /**
@@ -304,7 +307,10 @@ class InvoiceController extends Controller
 
             $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
 
-            if ($validatedInvoice['sale_type'] == 'credit') {
+            $dueBasedChecks = config('credit.due_based_checks');
+
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {
                     return response()->json([
                         'status' => false,
@@ -354,11 +360,25 @@ class InvoiceController extends Controller
             $validatedInvoice['invoiceId'] = $customInvoiceId;
 
 
-            if ($validatedInvoice['sale_type'] == 'credit') {
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
                 if ($custCreditUsage > $customerCreditLimit) {
                     return response()->json([
                         'status' => false,
                         'message' => 'Invoice exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
+            }
+
+            if ($dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
+                // The order being invoiced is replaced by this invoice, so it must not count twice.
+                $exceeded = $this->creditUsage->exceededLimit($customer, $validatedInvoice['grand_total'], excludeOrderId: $order?->id);
+
+                if ($exceeded) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Invoice exceeds {$exceeded} credit limit.",
                         'data' => null
                     ], 422);
                 }
@@ -538,8 +558,11 @@ class InvoiceController extends Controller
             );
 
             $credit_limit = $creditUseFromInvoices + $totalOrderAmount + $validatedInvoice['grand_total'];
-            
-            if ($validatedInvoice['sale_type'] == 'credit') {
+
+            $dueBasedChecks = config('credit.due_based_checks');
+
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
                 if ($credit_limit > $employeeCreditLimit) {
                     return response()->json([
                         'status' => false,
@@ -568,11 +591,25 @@ class InvoiceController extends Controller
             $custCurrentDue = ($customer->old_due + $newCustTotalPurchase) - $custTotalPayment;
             $custCreditUsage = $custCurrentDue + $custPendingOrderAmount;
 
-            if ($validatedInvoice['sale_type'] == 'credit') {
+            // Legacy check, used while credit.due_based_checks is off.
+            if (! $dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
                 if ($custCreditUsage > $customerCreditLimit) {
                     return response()->json([
                         'status' => false,
                         'message' => 'Updated invoice exceeds customer credit limit.',
+                        'data' => null
+                    ], 422);
+                }
+            }
+
+            if ($dueBasedChecks && $validatedInvoice['sale_type'] == 'credit') {
+                // The invoice being edited is replaced by its new total, so it must not count twice.
+                $exceeded = $this->creditUsage->exceededLimit($customer, $validatedInvoice['grand_total'], excludeInvoiceId: (int) $Id);
+
+                if ($exceeded) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Updated invoice exceeds {$exceeded} credit limit.",
                         'data' => null
                     ], 422);
                 }
