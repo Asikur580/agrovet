@@ -198,7 +198,40 @@ class EmployeeController extends Controller
 
             $employees = Employee::where('status', 'active')->get();
 
-            $report = $employees->map(function ($employee) use ($fromDate, $toDate) {
+            // Purchase, payment and due belong to the customer's current officer, the same
+            // way GET /customers shows them. Invoices and payments keep the employee_id of
+            // whoever created them, which is not always that officer.
+            $sumByOfficer = function (string $table, string $amountColumn, ?string $dateColumn = null) use ($fromDate, $toDate) {
+                $query = DB::table($table)
+                    ->join('customers', 'customers.id', '=', "{$table}.cust_id")
+                    ->selectRaw("customers.employee_id AS officer_id, SUM({$table}.{$amountColumn}) AS total")
+                    ->groupBy('customers.employee_id');
+
+                if ($dateColumn && $fromDate && $toDate) {
+                    $query->whereBetween("{$table}.{$dateColumn}", [$fromDate, $toDate]);
+                }
+
+                return $query->pluck('total', 'officer_id');
+            };
+
+            $oldDueByOfficer = DB::table('customers')
+                ->selectRaw('employee_id AS officer_id, SUM(old_due) AS total')
+                ->groupBy('employee_id')
+                ->pluck('total', 'officer_id');
+
+            // Due is the running balance, so the date range does not apply to it.
+            $allPurchaseByOfficer = $sumByOfficer('invoices', 'grand_total');
+            $allPaymentByOfficer = $sumByOfficer('payments', 'amount');
+
+            if ($fromDate && $toDate) {
+                $purchaseByOfficer = $sumByOfficer('invoices', 'grand_total', 'sale_date');
+                $paymentByOfficer = $sumByOfficer('payments', 'amount', 'payment_date');
+            } else {
+                $purchaseByOfficer = $allPurchaseByOfficer;
+                $paymentByOfficer = $allPaymentByOfficer;
+            }
+
+            $report = $employees->map(function ($employee) use ($fromDate, $toDate, $oldDueByOfficer, $allPurchaseByOfficer, $allPaymentByOfficer, $purchaseByOfficer, $paymentByOfficer) {
                 // Total credit purchase from invoices. Cash sales never consume the credit limit.
                 $purchaseQuery = DB::table('invoices')
                     ->where('employee_id', $employee->id)
@@ -248,13 +281,19 @@ class EmployeeController extends Controller
                 $creditLimit = $employee->credit_limit ?? 0;
                 $creditDue = $creditLimit - $creditUse;
 
+                $oldDue = $oldDueByOfficer[$employee->id] ?? 0;
+                $totalDue = $oldDue
+                    + ($allPurchaseByOfficer[$employee->id] ?? 0)
+                    - ($allPaymentByOfficer[$employee->id] ?? 0);
+
                 return [
                     'id' => $employee->id,
                     'employee_name' => $employee->name,
                     'credit_limit' => number_format($creditLimit, 2, '.', ''),
-                    'total_purchase' => number_format($totalCreditPurchase, 2, '.', ''),
-                    'total_payment' => number_format($totalPayment, 2, '.', ''),
-                    'total_due' => number_format($totalCreditPurchase - $totalPayment, 2, '.', ''),
+                    'old_due' => number_format($oldDue, 2, '.', ''),
+                    'total_purchase' => number_format($purchaseByOfficer[$employee->id] ?? 0, 2, '.', ''),
+                    'total_payment' => number_format($paymentByOfficer[$employee->id] ?? 0, 2, '.', ''),
+                    'total_due' => number_format($totalDue, 2, '.', ''),
                     'credit_use' => number_format($creditUse, 2, '.', ''),
                     'credit_due' => number_format($creditDue, 2, '.', ''),
                 ];

@@ -134,9 +134,17 @@ for hierarchy logic to work.
 **`GET /employees/credit-report` →**
 ```jsonc
 { "status": true, "data": [
-  { "id": 5, "employee_name": "…", "credit_limit": "500000.00", "total_purchase": "…",
-    "total_payment": "…", "total_due": "…", "credit_use": "…", "credit_due": "…" } ] }
+  { "id": 5, "employee_name": "…", "credit_limit": "500000.00", "old_due": "…",
+    "total_purchase": "…", "total_payment": "…", "total_due": "…", "credit_use": "…",
+    "credit_due": "…" } ] }
 ```
+
+* `old_due`, `total_purchase`, `total_payment`, `total_due` are summed over the customers
+  the employee currently owns (`customers.employee_id`), the same as `GET /customers`.
+  `total_due` = `old_due + Σ invoices − Σ payments`, all time — `from_date`/`to_date` filter
+  only `total_purchase` and `total_payment`.
+* `credit_use` / `credit_due` still use `invoices.employee_id` / `payments.employee_id`
+  (credit sales only), matching the credit-limit check on order and invoice create.
 
 ---
 
