@@ -136,6 +136,8 @@ class InvoiceController extends Controller
                     }),
                     'invoice_date' => $invoice->sale_date,
                     'grand_total' => $invoice->grand_total,
+                    'paid' => $invoice->paid ?? 0,
+                    'due' => $invoice->due ?? 0,
                     'sale_type' => $invoice->sale_type,
                     'offer' => $invoice->offer,
                     'is_printed' => $invoice->is_printed,
