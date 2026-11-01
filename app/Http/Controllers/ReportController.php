@@ -1935,4 +1935,174 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Cash and Credit Sales Report (Single Page Comprehensive Report)
+     */
+    public function cashCreditSalesReport(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $designation = $user && $user->employee && $user->employee->designation ? $user->employee->designation->slug : 'admin';
+
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+            $filterEmployeeId = $request->input('employee_id');
+            $filterCustomerId = $request->input('customer_id');
+            $saleType = strtolower($request->input('sale_type', 'all')); // 'all' | 'cash' | 'credit'
+
+            // Step 1: Role-based employee restrictions
+            $allowedEmployeeIds = collect();
+            if (in_array($designation, ['admin', 'super_admin', 'developer'])) {
+                if ($filterEmployeeId) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                }
+            } elseif ($designation === 'officer') {
+                $allowedEmployeeIds = collect([$user->employee->id]);
+            } elseif ($designation === 'manager') {
+                $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $allowedEmployeeIds = $officerIds->push($user->employee->id);
+                if ($filterEmployeeId && $allowedEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                }
+            } elseif ($designation === 'rsm') {
+                $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                $allEmployeeIds = $managerIds->merge($officerIds)->push($user->employee->id);
+                if ($filterEmployeeId && $allEmployeeIds->contains($filterEmployeeId)) {
+                    $allowedEmployeeIds = collect([$filterEmployeeId]);
+                } else {
+                    $allowedEmployeeIds = $allEmployeeIds;
+                }
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No sales data available for your role.',
+                    'data' => [
+                        'summary' => [
+                            'total_sales' => 0,
+                            'total_invoices' => 0,
+                            'cash_sales' => 0,
+                            'cash_invoices' => 0,
+                            'cash_percentage' => 0,
+                            'credit_sales' => 0,
+                            'credit_invoices' => 0,
+                            'credit_percentage' => 0,
+                            'total_paid' => 0,
+                            'total_due' => 0,
+                        ],
+                        'invoices' => []
+                    ]
+                ]);
+            }
+
+            // Step 2: Base Query for KPI Summary (Independent of current tab sale_type filter)
+            $baseQuery = Invoice::query();
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $baseQuery->whereIn('invoices.employee_id', $allowedEmployeeIds);
+            }
+            if ($filterCustomerId) {
+                $baseQuery->where('invoices.cust_id', $filterCustomerId);
+            }
+            if ($fromDate && $toDate) {
+                $baseQuery->whereBetween('invoices.sale_date', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            }
+
+            // Cloned queries for summary calculations
+            $totalInvoicesCount = (clone $baseQuery)->count();
+            $totalSalesAmount = (float) ((clone $baseQuery)->sum('grand_total') ?? 0);
+            $totalPaidAmount = (float) ((clone $baseQuery)->sum('paid') ?? 0);
+            $totalDueAmount = (float) ((clone $baseQuery)->sum('due') ?? 0);
+
+            $cashInvoicesCount = (clone $baseQuery)->where('sale_type', 'cash')->count();
+            $cashSalesAmount = (float) ((clone $baseQuery)->where('sale_type', 'cash')->sum('grand_total') ?? 0);
+
+            $creditInvoicesCount = (clone $baseQuery)->where('sale_type', 'credit')->count();
+            $creditSalesAmount = (float) ((clone $baseQuery)->where('sale_type', 'credit')->sum('grand_total') ?? 0);
+
+            $cashPercentage = $totalSalesAmount > 0 ? round(($cashSalesAmount / $totalSalesAmount) * 100, 1) : 0;
+            $creditPercentage = $totalSalesAmount > 0 ? round(($creditSalesAmount / $totalSalesAmount) * 100, 1) : 0;
+
+            // Step 3: Fetch Detailed Invoices
+            $invoicesQuery = clone $baseQuery;
+            if ($saleType === 'cash') {
+                $invoicesQuery->where('invoices.sale_type', 'cash');
+            } elseif ($saleType === 'credit') {
+                $invoicesQuery->where('invoices.sale_type', 'credit');
+            }
+
+            $invoices = $invoicesQuery
+                ->with([
+                    'customer:id,customer_name,phone,address',
+                    'employee:id,name,employee_id',
+                    'products.product:id,name,pack_size'
+                ])
+                ->orderByDesc('sale_date')
+                ->orderByDesc('id')
+                ->get();
+
+            $formattedInvoices = $invoices->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'invoice_id' => $inv->invoiceId ?? ('INV-' . $inv->id),
+                    'sale_date' => $inv->sale_date,
+                    'sale_type' => $inv->sale_type ? strtolower($inv->sale_type) : 'cash',
+                    'customer_id' => $inv->cust_id,
+                    'customer_name' => $inv->customer->customer_name ?? 'N/A',
+                    'customer_phone' => $inv->customer->phone ?? '',
+                    'customer_address' => $inv->customer->address ?? '',
+                    'employee_id' => $inv->employee_id,
+                    'employee_name' => $inv->employee->name ?? 'N/A',
+                    'total_item' => $inv->total_item,
+                    'total_price' => (float) $inv->total_price,
+                    'discount' => (float) $inv->discount,
+                    'less' => (float) $inv->less,
+                    'grand_total' => (float) $inv->grand_total,
+                    'paid' => (float) $inv->paid,
+                    'due' => (float) $inv->due,
+                    'offer' => $inv->offer,
+                    'is_printed' => (int) $inv->is_printed,
+                    'products' => $inv->products->map(function ($item) {
+                        return [
+                            'product_name' => $item->product->name ?? 'N/A',
+                            'pack_size' => $item->product->pack_size ?? '',
+                            'quantity' => (int) $item->quantity,
+                            'bonus_qty' => (int) $item->bonus_qty,
+                            'unit_price' => (float) $item->unit_price,
+                            'total_price' => (float) ($item->quantity * $item->unit_price)
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Cash and Credit sales report retrieved successfully',
+                'data' => [
+                    'summary' => [
+                        'total_sales' => $totalSalesAmount,
+                        'total_invoices' => $totalInvoicesCount,
+                        'cash_sales' => $cashSalesAmount,
+                        'cash_invoices' => $cashInvoicesCount,
+                        'cash_percentage' => $cashPercentage,
+                        'credit_sales' => $creditSalesAmount,
+                        'credit_invoices' => $creditInvoicesCount,
+                        'credit_percentage' => $creditPercentage,
+                        'total_paid' => $totalPaidAmount,
+                        'total_due' => $totalDueAmount,
+                    ],
+                    'invoices' => $formattedInvoices
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve cash and credit sales report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

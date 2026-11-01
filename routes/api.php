@@ -222,6 +222,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/payment-history-by-role', [ReportController::class, 'paymentHistoryByRole']);
     Route::get('/customer-sales-report', [ReportController::class, 'generateSalesReport']);
     Route::get('/top-selling-products', [ReportController::class, 'topSellingProducts'])->name('report.topSellingProducts');
+    Route::get('/cash-credit-sales-report', [ReportController::class, 'cashCreditSalesReport'])->name('report.cashCreditSalesReport');
 });
 
 
@@ -238,6 +239,7 @@ Route::get('/product-profitability-report', [ReportController::class, 'generateP
 Route::get('/supplier-report', [ReportController::class, 'generateSupplierReport']);
 Route::get('/customer-report/{customerId}', [ReportController::class, 'customerReport2']);
 Route::get('/top-selling-products', [ReportController::class, 'topSellingProducts']);
+Route::get('/cash-credit-sales-report', [ReportController::class, 'cashCreditSalesReport']);
 
 
 // GET /api/due-invoices?from_date=2025-01-01&to_date=2025-01-31
