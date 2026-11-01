@@ -1653,4 +1653,286 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Top selling product per month report 
+     *
+     * Query params:
+     * - year: 2026 (defaults to current year)
+     * - month: 1-12 (optional: filter to a single month)
+     * - sort_by: 'quantity' (default) or 'amount'
+     * - limit: default 5 (top 5 products per month)
+     * - employee_id: optional filter by employee
+     */
+    public function topSellingProducts(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $designation = null;
+            if ($user && $user->employee && $user->employee->designation) {
+                $designation = $user->employee->designation->slug;
+            }
+
+            $currentYear = (int) Carbon::now()->format('Y');
+            $year = $request->filled('year') ? (int) $request->year : $currentYear;
+            $month = $request->filled('month') ? (int) $request->month : null;
+            $sortBy = $request->input('sort_by', 'quantity') === 'amount' ? 'amount' : 'quantity';
+            $limitPerMonth = $request->filled('limit') ? (int) $request->limit : 5;
+            $filterEmployeeId = $request->employee_id;
+
+            // -------------------------------------------------------------
+            // Step 1: Role-based filtering (consistent with sales reports)
+            // -------------------------------------------------------------
+            $allowedEmployeeIds = collect();
+            if ($user && $designation) {
+                if (in_array($designation, ['admin', 'super_admin', 'developer'])) {
+                    if ($filterEmployeeId) {
+                        $allowedEmployeeIds = collect([$filterEmployeeId]);
+                    }
+                } elseif ($designation === 'officer') {
+                    $allowedEmployeeIds = collect([$user->employee->id]);
+                } elseif ($designation === 'manager') {
+                    $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                    $allowedEmployeeIds = $officerIds->push($user->employee->id);
+                    if ($filterEmployeeId && $allowedEmployeeIds->contains($filterEmployeeId)) {
+                        $allowedEmployeeIds = collect([$filterEmployeeId]);
+                    }
+                } elseif ($designation === 'rsm') {
+                    $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                    $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                    $allEmployeeIds = $managerIds->merge($officerIds)->push($user->employee->id);
+                    if ($filterEmployeeId && $allEmployeeIds->contains($filterEmployeeId)) {
+                        $allowedEmployeeIds = collect([$filterEmployeeId]);
+                    } else {
+                        $allowedEmployeeIds = $allEmployeeIds;
+                    }
+                }
+            } elseif ($filterEmployeeId) {
+                $allowedEmployeeIds = collect([$filterEmployeeId]);
+            }
+
+            // Available years for dropdown
+            $yearsQuery = Invoice::selectRaw('DISTINCT SUBSTRING(sale_date, 1, 4) as sale_year')
+                ->whereNotNull('sale_date')
+                ->where('sale_date', '!=', '');
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $yearsQuery->whereIn('employee_id', $allowedEmployeeIds);
+            }
+            $availableYears = $yearsQuery->pluck('sale_year')
+                ->filter(function ($y) {
+                    return is_numeric($y) && (int) $y > 2000 && (int) $y < 2100;
+                })
+                ->map(fn($y) => (int) $y)
+                ->sortDesc()
+                ->values()
+                ->toArray();
+
+            if (!in_array($currentYear, $availableYears)) {
+                array_unshift($availableYears, $currentYear);
+                $availableYears = array_values(array_unique($availableYears));
+                rsort($availableYears);
+            }
+
+            // Base query for invoice products aggregated by month and product
+            $query = DB::table('invoice_products')
+                ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                ->join('products', 'invoice_products.product_id', '=', 'products.id')
+                ->leftJoin('categories', 'products.cat_id', '=', 'categories.id')
+                ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
+                ->select(
+                    DB::raw('SUBSTRING(invoices.sale_date, 1, 7) as month_key'),
+                    DB::raw('CAST(SUBSTRING(invoices.sale_date, 1, 4) AS UNSIGNED) as sale_year'),
+                    DB::raw('CAST(SUBSTRING(invoices.sale_date, 6, 2) AS UNSIGNED) as sale_month'),
+                    'products.id as product_id',
+                    'products.name as product_name',
+                    'products.pack_size',
+                    'products.image as product_image',
+                    'categories.name as category_name',
+                    'brands.name as brand_name',
+                    DB::raw('COUNT(DISTINCT invoices.id) as total_invoices'),
+                    DB::raw('CAST(SUM(invoice_products.quantity + COALESCE(invoice_products.bonus_qty, 0)) AS SIGNED) as total_quantity'),
+                    DB::raw('CAST(SUM(invoice_products.quantity) AS SIGNED) as sold_quantity'),
+                    DB::raw('CAST(SUM(COALESCE(invoice_products.bonus_qty, 0)) AS SIGNED) as bonus_quantity'),
+                    DB::raw('ROUND(SUM(invoice_products.quantity * invoice_products.unit_price), 2) as total_item_amount'),
+                    DB::raw('
+                        ROUND(
+                            SUM(
+                                (
+                                    (invoice_products.quantity * invoice_products.unit_price)
+                                    / (invoices.total_price + 1e-9)
+                                ) * invoices.grand_total
+                            ), 2
+                        ) as total_amount
+                    ')
+                )
+                ->whereNotNull('invoices.sale_date')
+                ->where('invoices.sale_date', 'LIKE', "{$year}-%");
+
+            if ($month) {
+                $monthStr = sprintf('%02d', $month);
+                $query->where('invoices.sale_date', 'LIKE', "{$year}-{$monthStr}%");
+            }
+
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $query->whereIn('invoices.employee_id', $allowedEmployeeIds);
+            }
+
+            $query->groupBy(
+                DB::raw('SUBSTRING(invoices.sale_date, 1, 7)'),
+                DB::raw('CAST(SUBSTRING(invoices.sale_date, 1, 4) AS UNSIGNED)'),
+                DB::raw('CAST(SUBSTRING(invoices.sale_date, 6, 2) AS UNSIGNED)'),
+                'products.id',
+                'products.name',
+                'products.pack_size',
+                'products.image',
+                'categories.name',
+                'brands.name'
+            );
+
+            $rawResults = $query->get();
+
+            // Group by month_key (e.g., '2026-01', '2026-02', etc.)
+            $groupedByMonth = $rawResults->groupBy('month_key');
+
+            $monthNames = [
+                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+            ];
+
+            $monthsToProcess = $month ? [$month] : range(1, 12);
+            $monthlyData = [];
+
+            // Compute overall annual ranking
+            $overallProducts = $rawResults->groupBy('product_id')->map(function ($items) {
+                $first = $items->first();
+                return [
+                    'product_id' => $first->product_id,
+                    'product_name' => $first->product_name,
+                    'pack_size' => $first->pack_size,
+                    'product_image' => $first->product_image,
+                    'category_name' => $first->category_name,
+                    'brand_name' => $first->brand_name,
+                    'total_invoices' => (int) $items->sum('total_invoices'),
+                    'total_quantity' => (int) $items->sum('total_quantity'),
+                    'sold_quantity' => (int) $items->sum('sold_quantity'),
+                    'bonus_quantity' => (int) $items->sum('bonus_quantity'),
+                    'total_amount' => round($items->sum('total_amount'), 2),
+                    'total_item_amount' => round($items->sum('total_item_amount'), 2),
+                ];
+            })->values();
+
+            if ($sortBy === 'amount') {
+                $overallTopProducts = $overallProducts->sortByDesc('total_amount')->values()->take(10)->all();
+            } else {
+                $overallTopProducts = $overallProducts->sortByDesc('total_quantity')->values()->take(10)->all();
+            }
+
+            foreach ($monthsToProcess as $m) {
+                $monthKey = sprintf('%04d-%02d', $year, $m);
+                $monthName = $monthNames[$m];
+                $items = $groupedByMonth->get($monthKey, collect());
+
+                if ($items->isNotEmpty()) {
+                    if ($sortBy === 'amount') {
+                        $sorted = $items->sort(function ($a, $b) {
+                            if ($a->total_amount == $b->total_amount) {
+                                return $b->total_quantity <=> $a->total_quantity;
+                            }
+                            return $b->total_amount <=> $a->total_amount;
+                        })->values();
+                    } else {
+                        $sorted = $items->sort(function ($a, $b) {
+                            if ($a->total_quantity == $b->total_quantity) {
+                                return $b->total_amount <=> $a->total_amount;
+                            }
+                            return $b->total_quantity <=> $a->total_quantity;
+                        })->values();
+                    }
+
+                    $rankedItems = $sorted->map(function ($item, $idx) use ($monthName, $year) {
+                        return [
+                            'rank' => $idx + 1,
+                            'month_name' => $monthName,
+                            'year' => $year,
+                            'month_key' => $item->month_key,
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product_name,
+                            'pack_size' => $item->pack_size,
+                            'product_image' => $item->product_image,
+                            'category_name' => $item->category_name,
+                            'brand_name' => $item->brand_name,
+                            'total_invoices' => (int) $item->total_invoices,
+                            'total_quantity' => (int) $item->total_quantity,
+                            'sold_quantity' => (int) $item->sold_quantity,
+                            'bonus_quantity' => (int) $item->bonus_quantity,
+                            'total_amount' => (float) $item->total_amount,
+                            'total_item_amount' => (float) $item->total_item_amount,
+                        ];
+                    });
+
+                    $topProduct = $rankedItems->first();
+                    $totalMonthSales = round($rankedItems->sum('total_amount'), 2);
+                    $totalMonthQuantity = (int) $rankedItems->sum('total_quantity');
+                    $totalMonthInvoices = (int) $items->sum('total_invoices');
+
+                    $monthlyData[] = [
+                        'month_key' => $monthKey,
+                        'month_number' => $m,
+                        'month_name' => $monthName,
+                        'year' => $year,
+                        'has_sales' => true,
+                        'top_product' => $topProduct,
+                        'top_products' => $rankedItems->take($limitPerMonth)->values()->all(),
+                        'all_products' => $rankedItems->values()->all(),
+                        'total_month_sales' => $totalMonthSales,
+                        'total_month_quantity' => $totalMonthQuantity,
+                        'total_month_invoices' => $totalMonthInvoices,
+                    ];
+                } else {
+                    $monthlyData[] = [
+                        'month_key' => $monthKey,
+                        'month_number' => $m,
+                        'month_name' => $monthName,
+                        'year' => $year,
+                        'has_sales' => false,
+                        'top_product' => null,
+                        'top_products' => [],
+                        'all_products' => [],
+                        'total_month_sales' => 0,
+                        'total_month_quantity' => 0,
+                        'total_month_invoices' => 0,
+                    ];
+                }
+            }
+
+            // Current month data (for dashboard at-a-glance banner)
+            $currentMonthKey = Carbon::now()->format('Y-m');
+            $currentMonthData = collect($monthlyData)->firstWhere('month_key', $currentMonthKey);
+            if (!$currentMonthData) {
+                $currentMonthData = collect($monthlyData)->firstWhere('has_sales', true) ?: ($monthlyData[0] ?? null);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Top selling products retrieved successfully',
+                'data' => [
+                    'year' => $year,
+                    'month' => $month,
+                    'sort_by' => $sortBy,
+                    'available_years' => $availableYears,
+                    'current_month_top' => $currentMonthData ? $currentMonthData['top_product'] : null,
+                    'current_month_summary' => $currentMonthData,
+                    'monthly_data' => $monthlyData,
+                    'overall_top_products' => $overallTopProducts
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve top selling products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
