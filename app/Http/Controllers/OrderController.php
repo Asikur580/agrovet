@@ -51,20 +51,19 @@ class OrderController extends Controller
             $ordersQuery = Order::with(['customer', 'employee', 'orderProducts.product'])->latest();
 
             // Role based filtering
-            if ($user->employee->designation->slug == 'admin') {
+            $designation = $user && $user->employee && $user->employee->designation ? $user->employee->designation->slug : 'admin';
+            if (in_array($designation, ['admin', 'super_admin', 'developer'])) {
                 // Admin all
-            } elseif ($user->employee->designation->slug == 'officer') {
+            } elseif ($designation == 'officer') {
                 $ordersQuery->where('employee_id', $user->employee->id);
-            } elseif ($user->employee->designation->slug == 'manager') {
-
+            } elseif ($designation == 'manager') {
                 $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
-                $ordersQuery->whereIn('employee_id', $officerIds);
-            } elseif ($user->employee->designation->slug == 'rsm') {
-
+                $allowedIds = $officerIds->push($user->employee->id);
+                $ordersQuery->whereIn('employee_id', $allowedIds);
+            } elseif ($designation == 'rsm') {
                 $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
                 $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
-                $allEmployeeIds = $managerIds->merge($officerIds);
-
+                $allEmployeeIds = $managerIds->merge($officerIds)->push($user->employee->id);
                 $ordersQuery->whereIn('employee_id', $allEmployeeIds);
             } else {
                 return response()->json([

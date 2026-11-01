@@ -18,6 +18,7 @@ use App\Models\Supplier;
 use App\Models\StockInOut;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReportController extends Controller
 {
@@ -349,14 +350,19 @@ class ReportController extends Controller
                 ->groupBy('products.id', 'products.name', 'products.pack_size');
 
             if ($fromDate && $toDate) {
-                $query->whereBetween('invoices.sale_date', [
-                    Carbon::parse($fromDate)->startOfDay(),
-                    Carbon::parse($toDate)->endOfDay()
-                ]);
+                $from = Carbon::parse($fromDate)->format('Y-m-d');
+                $to = Carbon::parse($toDate)->format('Y-m-d');
+                $query->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('invoices.sale_date', [$from, $to])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$from, $to]);
+                });
             } elseif ($request->days) {
-                $startDate = Carbon::now()->subDays($request->days)->startOfDay();
-                $endDate = Carbon::now()->endOfDay();
-                $query->whereBetween('invoices.sale_date', [$startDate, $endDate]);
+                $startDate = Carbon::now()->subDays($request->days)->format('Y-m-d');
+                $endDate = Carbon::now()->format('Y-m-d');
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('invoices.sale_date', [$startDate, $endDate])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$startDate, $endDate]);
+                });
             }
 
             $report = $query->get();
@@ -401,14 +407,19 @@ class ReportController extends Controller
                 ->groupBy('categories.id', 'categories.name');
 
             if ($fromDate && $toDate) {
-                $query->whereBetween('invoices.sale_date', [
-                    Carbon::parse($fromDate)->startOfDay(),
-                    Carbon::parse($toDate)->endOfDay()
-                ]);
+                $from = Carbon::parse($fromDate)->format('Y-m-d');
+                $to = Carbon::parse($toDate)->format('Y-m-d');
+                $query->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('invoices.sale_date', [$from, $to])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$from, $to]);
+                });
             } elseif ($request->days) {
-                $startDate = Carbon::now()->subDays($request->days)->startOfDay();
-                $endDate = Carbon::now()->endOfDay();
-                $query->whereBetween('invoices.sale_date', [$startDate, $endDate]);
+                $startDate = Carbon::now()->subDays($request->days)->format('Y-m-d');
+                $endDate = Carbon::now()->format('Y-m-d');
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('invoices.sale_date', [$startDate, $endDate])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$startDate, $endDate]);
+                });
             }
 
             $report = $query->get();
@@ -762,14 +773,77 @@ class ReportController extends Controller
         ]);
     }
 
-    public function dashboardReport()
+    public function dashboardReport(Request $request)
     {
         try {
+            $user = $request->user();
+            $designation = $user && $user->employee && $user->employee->designation ? $user->employee->designation->slug : 'admin';
+
+            $allowedEmployeeIds = collect();
+            if ($user && $user->employee) {
+                if ($designation === 'officer') {
+                    $allowedEmployeeIds = collect([$user->employee->id]);
+                } elseif ($designation === 'manager') {
+                    $officerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                    $allowedEmployeeIds = $officerIds->push($user->employee->id);
+                } elseif ($designation === 'rsm') {
+                    $managerIds = Relation::where('relation_id', $user->employee->id)->pluck('employee_id');
+                    $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+                    $allowedEmployeeIds = $managerIds->merge($officerIds)->push($user->employee->id);
+                }
+            }
+
+            // Invoices query for financial metrics
+            $invoiceQuery = Invoice::query();
+            if ($allowedEmployeeIds->isNotEmpty()) {
+                $invoiceQuery->whereIn('employee_id', $allowedEmployeeIds);
+            }
+
+            $todayStr = Carbon::now()->format('Y-m-d');
+            $currentMonthKey = Carbon::now()->format('Y-m');
+
+            $todaySales = (float) ((clone $invoiceQuery)->where(function ($q) use ($todayStr) {
+                $q->where('sale_date', 'LIKE', "{$todayStr}%")
+                  ->orWhereDate('sale_date', $todayStr);
+            })->sum('grand_total') ?? 0);
+
+            $todayInvoices = (int) ((clone $invoiceQuery)->where(function ($q) use ($todayStr) {
+                $q->where('sale_date', 'LIKE', "{$todayStr}%")
+                  ->orWhereDate('sale_date', $todayStr);
+            })->count());
+
+            $monthSales = (float) ((clone $invoiceQuery)->where(function ($q) use ($currentMonthKey) {
+                $q->where('sale_date', 'LIKE', "{$currentMonthKey}%")
+                  ->orWhere(function ($sub) {
+                      $sub->whereYear('sale_date', Carbon::now()->year)
+                          ->whereMonth('sale_date', Carbon::now()->month);
+                  });
+            })->sum('grand_total') ?? 0);
+
+            $totalDue = (float) ((clone $invoiceQuery)->sum('due') ?? 0);
+            $dueInvoicesCount = (int) ((clone $invoiceQuery)->where('due', '>', 0)->count());
+
+            $lowStockCount = Product::where('quantity', '<=', 10)->count();
+            $totalSupplier = 0;
+            try {
+                if (Schema::hasTable('suppliers')) {
+                    $totalSupplier = Supplier::count();
+                }
+            } catch (Exception $e) {
+                $totalSupplier = 0;
+            }
+
             $data = [
                 'total_employee' => Employee::where('status', 'active')->count(),
                 'total_customer' => Customer::count(),
-                'total_supplier' => Supplier::count(),
-                'total_order' => Order::count()
+                'total_supplier' => $totalSupplier,
+                'total_order' => Order::count(),
+                'today_sales' => round($todaySales, 2),
+                'today_invoices' => $todayInvoices,
+                'month_sales' => round($monthSales, 2),
+                'total_due' => round($totalDue, 2),
+                'due_invoices_count' => $dueInvoicesCount,
+                'low_stock_count' => $lowStockCount
             ];
 
             return response()->json([
@@ -1540,15 +1614,19 @@ class ReportController extends Controller
 
             // Apply date range filter
             if ($fromDate && $toDate) {
-                $query->whereBetween('invoices.sale_date', [
-                    Carbon::parse($fromDate)->startOfDay(),
-                    Carbon::parse($toDate)->endOfDay()
-                ]);
+                $from = Carbon::parse($fromDate)->format('Y-m-d');
+                $to = Carbon::parse($toDate)->format('Y-m-d');
+                $query->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('invoices.sale_date', [$from, $to])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$from, $to]);
+                });
             } elseif ($days) {
-                $query->whereBetween('invoices.sale_date', [
-                    Carbon::now()->subDays($days)->startOfDay(),
-                    Carbon::now()->endOfDay()
-                ]);
+                $startDate = Carbon::now()->subDays($days)->format('Y-m-d');
+                $endDate = Carbon::now()->format('Y-m-d');
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('invoices.sale_date', [$startDate, $endDate])
+                      ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$startDate, $endDate]);
+                });
             }
 
             $report = $query->orderByDesc('total_amount')->get();
