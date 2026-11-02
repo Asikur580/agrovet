@@ -238,8 +238,7 @@ Route::get('/account-report', [ReportController::class, 'generateAccountsReport'
 Route::get('/product-profitability-report', [ReportController::class, 'generateProductProfitabilityReport']);
 Route::get('/supplier-report', [ReportController::class, 'generateSupplierReport']);
 Route::get('/customer-report/{customerId}', [ReportController::class, 'customerReport2']);
-Route::get('/top-selling-products', [ReportController::class, 'topSellingProducts']);
-Route::get('/cash-credit-sales-report', [ReportController::class, 'cashCreditSalesReport']);
+
 
 
 // GET /api/due-invoices?from_date=2025-01-01&to_date=2025-01-31
