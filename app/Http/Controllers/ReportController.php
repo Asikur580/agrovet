@@ -1754,6 +1754,8 @@ class ReportController extends Controller
             $currentYear = (int) Carbon::now()->format('Y');
             $year = $request->filled('year') ? (int) $request->year : $currentYear;
             $month = $request->filled('month') ? (int) $request->month : null;
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
             $sortBy = $request->input('sort_by', 'quantity') === 'amount' ? 'amount' : 'quantity';
             $limitPerMonth = $request->filled('limit') ? (int) $request->limit : 5;
             $filterEmployeeId = $request->employee_id;
@@ -1843,9 +1845,157 @@ class ReportController extends Controller
                         ) as total_amount
                     ')
                 )
-                ->whereNotNull('invoices.sale_date')
-                ->where('invoices.sale_date', 'LIKE', "{$year}-%");
+                ->whereNotNull('invoices.sale_date');
 
+            $hasDateRange = !empty($fromDate) && !empty($toDate);
+
+            if ($hasDateRange) {
+                $from = Carbon::parse($fromDate)->format('Y-m-d');
+                $to = Carbon::parse($toDate)->format('Y-m-d');
+
+                $rangeQuery = DB::table('invoice_products')
+                    ->join('invoices', 'invoice_products.invoice_id', '=', 'invoices.id')
+                    ->join('products', 'invoice_products.product_id', '=', 'products.id')
+                    ->leftJoin('categories', 'products.cat_id', '=', 'categories.id')
+                    ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
+                    ->select(
+                        'products.id as product_id',
+                        'products.name as product_name',
+                        'products.pack_size',
+                        'products.image as product_image',
+                        'categories.name as category_name',
+                        'brands.name as brand_name',
+                        DB::raw('COUNT(DISTINCT invoices.id) as total_invoices'),
+                        DB::raw('CAST(SUM(invoice_products.quantity + COALESCE(invoice_products.bonus_qty, 0)) AS SIGNED) as total_quantity'),
+                        DB::raw('CAST(SUM(invoice_products.quantity) AS SIGNED) as sold_quantity'),
+                        DB::raw('CAST(SUM(COALESCE(invoice_products.bonus_qty, 0)) AS SIGNED) as bonus_quantity'),
+                        DB::raw('ROUND(SUM(invoice_products.quantity * invoice_products.unit_price), 2) as total_item_amount'),
+                        DB::raw('
+                            ROUND(
+                                SUM(
+                                    (
+                                        (invoice_products.quantity * invoice_products.unit_price)
+                                        / (invoices.total_price + 1e-9)
+                                    ) * invoices.grand_total
+                                ), 2
+                            ) as total_amount
+                        ')
+                    )
+                    ->whereNotNull('invoices.sale_date')
+                    ->where(function ($q) use ($from, $to) {
+                        $q->whereBetween('invoices.sale_date', [$from, $to . ' 23:59:59'])
+                          ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$from, $to]);
+                    });
+
+                if ($allowedEmployeeIds->isNotEmpty()) {
+                    $rangeQuery->whereIn('invoices.employee_id', $allowedEmployeeIds);
+                }
+
+                $rangeQuery->groupBy(
+                    'products.id',
+                    'products.name',
+                    'products.pack_size',
+                    'products.image',
+                    'categories.name',
+                    'brands.name'
+                );
+
+                $rawResults = $rangeQuery->get();
+
+                if ($sortBy === 'amount') {
+                    $sorted = $rawResults->sort(function ($a, $b) {
+                        if ($a->total_amount == $b->total_amount) {
+                            return $b->total_quantity <=> $a->total_quantity;
+                        }
+                        return $b->total_amount <=> $a->total_amount;
+                    })->values();
+                } else {
+                    $sorted = $rawResults->sort(function ($a, $b) {
+                        if ($a->total_quantity == $b->total_quantity) {
+                            return $b->total_amount <=> $a->total_amount;
+                        }
+                        return $b->total_quantity <=> $a->total_quantity;
+                    })->values();
+                }
+
+                $periodText = "{$from} to {$to}";
+                $rankedProducts = $sorted->map(function ($item, $idx) use ($periodText) {
+                    return [
+                        'rank' => $idx + 1,
+                        'period' => $periodText,
+                        'month_name' => $periodText,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product_name,
+                        'pack_size' => $item->pack_size,
+                        'product_image' => $item->product_image,
+                        'category_name' => $item->category_name,
+                        'brand_name' => $item->brand_name,
+                        'total_invoices' => (int) $item->total_invoices,
+                        'total_quantity' => (int) $item->total_quantity,
+                        'sold_quantity' => (int) $item->sold_quantity,
+                        'bonus_quantity' => (int) $item->bonus_quantity,
+                        'total_amount' => (float) $item->total_amount,
+                        'total_item_amount' => (float) $item->total_item_amount,
+                    ];
+                });
+
+                $topProduct = $rankedProducts->first();
+                $totalRangeSales = round($rankedProducts->sum('total_amount'), 2);
+                $totalRangeQuantity = (int) $rankedProducts->sum('total_quantity');
+
+                $rangeInvoicesQuery = DB::table('invoices')
+                    ->whereNotNull('sale_date')
+                    ->where(function ($q) use ($from, $to) {
+                        $q->whereBetween('sale_date', [$from, $to . ' 23:59:59'])
+                          ->orWhereRaw('DATE(sale_date) BETWEEN ? AND ?', [$from, $to]);
+                    });
+                if ($allowedEmployeeIds->isNotEmpty()) {
+                    $rangeInvoicesQuery->whereIn('employee_id', $allowedEmployeeIds);
+                }
+                $totalRangeInvoices = (int) $rangeInvoicesQuery->count();
+
+                $topProductsList = $rankedProducts->take($limitPerMonth)->values()->all();
+                $allProductsList = $rankedProducts->values()->all();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Top selling products retrieved successfully',
+                    'data' => [
+                        'year' => $year,
+                        'month' => $month,
+                        'from_date' => $fromDate,
+                        'to_date' => $toDate,
+                        'is_custom_date' => true,
+                        'sort_by' => $sortBy,
+                        'available_years' => $availableYears,
+                        'current_month_top' => $topProduct,
+                        'top_product' => $topProduct,
+                        'top_products' => $topProductsList,
+                        'all_products' => $allProductsList,
+                        'total_sales' => $totalRangeSales,
+                        'total_quantity' => $totalRangeQuantity,
+                        'total_invoices' => $totalRangeInvoices,
+                        'monthly_data' => [
+                            [
+                                'month_key' => 'custom_range',
+                                'month_number' => 0,
+                                'month_name' => $periodText,
+                                'year' => null,
+                                'has_sales' => $rankedProducts->isNotEmpty(),
+                                'top_product' => $topProduct,
+                                'top_products' => $topProductsList,
+                                'all_products' => $allProductsList,
+                                'total_month_sales' => $totalRangeSales,
+                                'total_month_quantity' => $totalRangeQuantity,
+                                'total_month_invoices' => $totalRangeInvoices,
+                            ]
+                        ],
+                        'overall_top_products' => $topProductsList,
+                    ]
+                ]);
+            }
+
+            $query->where('invoices.sale_date', 'LIKE', "{$year}-%");
             if ($month) {
                 $monthStr = sprintf('%02d', $month);
                 $query->where('invoices.sale_date', 'LIKE', "{$year}-{$monthStr}%");
@@ -1878,7 +2028,16 @@ class ReportController extends Controller
                 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
             ];
 
-            $monthsToProcess = $month ? [$month] : range(1, 12);
+            $months = $month ? [$month] : range(1, 12);
+            $periodsToProcess = [];
+            foreach ($months as $m) {
+                $periodsToProcess[] = [
+                    'year' => $year,
+                    'month' => $m,
+                    'key' => sprintf('%04d-%02d', $year, $m),
+                ];
+            }
+
             $monthlyData = [];
 
             // Compute overall annual ranking
@@ -1906,9 +2065,11 @@ class ReportController extends Controller
                 $overallTopProducts = $overallProducts->sortByDesc('total_quantity')->values()->take(10)->all();
             }
 
-            foreach ($monthsToProcess as $m) {
-                $monthKey = sprintf('%04d-%02d', $year, $m);
-                $monthName = $monthNames[$m];
+            foreach ($periodsToProcess as $period) {
+                $pYear = $period['year'];
+                $pMonth = $period['month'];
+                $monthKey = $period['key'];
+                $monthName = $monthNames[$pMonth];
                 $items = $groupedByMonth->get($monthKey, collect());
 
                 if ($items->isNotEmpty()) {
@@ -1928,11 +2089,11 @@ class ReportController extends Controller
                         })->values();
                     }
 
-                    $rankedItems = $sorted->map(function ($item, $idx) use ($monthName, $year) {
+                    $rankedItems = $sorted->map(function ($item, $idx) use ($monthName, $pYear) {
                         return [
                             'rank' => $idx + 1,
                             'month_name' => $monthName,
-                            'year' => $year,
+                            'year' => $pYear,
                             'month_key' => $item->month_key,
                             'product_id' => $item->product_id,
                             'product_name' => $item->product_name,
@@ -1956,9 +2117,9 @@ class ReportController extends Controller
 
                     $monthlyData[] = [
                         'month_key' => $monthKey,
-                        'month_number' => $m,
+                        'month_number' => $pMonth,
                         'month_name' => $monthName,
-                        'year' => $year,
+                        'year' => $pYear,
                         'has_sales' => true,
                         'top_product' => $topProduct,
                         'top_products' => $rankedItems->take($limitPerMonth)->values()->all(),
@@ -1970,9 +2131,9 @@ class ReportController extends Controller
                 } else {
                     $monthlyData[] = [
                         'month_key' => $monthKey,
-                        'month_number' => $m,
+                        'month_number' => $pMonth,
                         'month_name' => $monthName,
-                        'year' => $year,
+                        'year' => $pYear,
                         'has_sales' => false,
                         'top_product' => null,
                         'top_products' => [],
@@ -1997,6 +2158,8 @@ class ReportController extends Controller
                 'data' => [
                     'year' => $year,
                     'month' => $month,
+                    'from_date' => $fromDate,
+                    'to_date' => $toDate,
                     'sort_by' => $sortBy,
                     'available_years' => $availableYears,
                     'current_month_top' => $currentMonthData ? $currentMonthData['top_product'] : null,
