@@ -114,16 +114,17 @@ class CustomerController extends Controller
 
             // Handle the image upload if provided
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
+                $validatedData['image'] = $this->uploadCustomerFile($request->file('image'), 'customers', 'customer');
+            }
 
-                // Generate a unique name for the image
-                $imageName = 'customer_' . time() . '.' . $image->getClientOriginalExtension();
+            // Handle trade license upload if provided
+            if ($request->hasFile('trade_license')) {
+                $validatedData['trade_license'] = $this->uploadCustomerFile($request->file('trade_license'), 'customers/documents', 'trade_license');
+            }
 
-                // Store the image in the 'customers' directory within the 'public' disk
-                $imagePath = $image->storeAs('customers', $imageName, 'public');
-
-                // Save the image path to the validated data
-                $validatedData['image'] = $imagePath;
+            // Handle NID upload if provided
+            if ($request->hasFile('nid')) {
+                $validatedData['nid'] = $this->uploadCustomerFile($request->file('nid'), 'customers/documents', 'nid');
             }
 
             $latestCustomer = Customer::orderBy('id', 'desc')->first();
@@ -217,23 +218,43 @@ class CustomerController extends Controller
             $customer = Customer::findOrFail($id);
             $oldEmployeeId = $customer->employee_id;
 
-            // Handle the image upload if provided
-            if ($request->hasFile('image')) {
-                // Delete the old image if it exists
+            // Handle image removal or upload
+            if ($request->boolean('remove_image')) {
                 if ($customer->image && file_exists(storage_path('app/public/' . $customer->image))) {
                     unlink(storage_path('app/public/' . $customer->image));
                 }
+                $validatedData['image'] = null;
+            } elseif ($request->hasFile('image')) {
+                if ($customer->image && file_exists(storage_path('app/public/' . $customer->image))) {
+                    unlink(storage_path('app/public/' . $customer->image));
+                }
+                $validatedData['image'] = $this->uploadCustomerFile($request->file('image'), 'customers', 'customer');
+            }
 
-                $image = $request->file('image');
+            // Handle trade license removal or upload
+            if ($request->boolean('remove_trade_license')) {
+                if ($customer->trade_license && file_exists(storage_path('app/public/' . $customer->trade_license))) {
+                    unlink(storage_path('app/public/' . $customer->trade_license));
+                }
+                $validatedData['trade_license'] = null;
+            } elseif ($request->hasFile('trade_license')) {
+                if ($customer->trade_license && file_exists(storage_path('app/public/' . $customer->trade_license))) {
+                    unlink(storage_path('app/public/' . $customer->trade_license));
+                }
+                $validatedData['trade_license'] = $this->uploadCustomerFile($request->file('trade_license'), 'customers/documents', 'trade_license');
+            }
 
-                // Generate a unique name for the image
-                $imageName = 'customer_' . time() . '.' . $image->getClientOriginalExtension();
-
-                // Store the image in the 'customers' directory within the 'public' disk
-                $imagePath = $image->storeAs('customers', $imageName, 'public');
-
-                // Save the image path to the validated data
-                $validatedData['image'] = $imagePath;
+            // Handle NID removal or upload
+            if ($request->boolean('remove_nid')) {
+                if ($customer->nid && file_exists(storage_path('app/public/' . $customer->nid))) {
+                    unlink(storage_path('app/public/' . $customer->nid));
+                }
+                $validatedData['nid'] = null;
+            } elseif ($request->hasFile('nid')) {
+                if ($customer->nid && file_exists(storage_path('app/public/' . $customer->nid))) {
+                    unlink(storage_path('app/public/' . $customer->nid));
+                }
+                $validatedData['nid'] = $this->uploadCustomerFile($request->file('nid'), 'customers/documents', 'nid');
             }
 
             // Update the customer with the validated data
@@ -273,6 +294,12 @@ class CustomerController extends Controller
             // Delete the old image if it exists
             if ($customer->image && file_exists(storage_path('app/public/' . $customer->image))) {
                 unlink(storage_path('app/public/' . $customer->image));
+            }
+            if ($customer->trade_license && file_exists(storage_path('app/public/' . $customer->trade_license))) {
+                unlink(storage_path('app/public/' . $customer->trade_license));
+            }
+            if ($customer->nid && file_exists(storage_path('app/public/' . $customer->nid))) {
+                unlink(storage_path('app/public/' . $customer->nid));
             }
             $customer->delete();
 
@@ -322,5 +349,66 @@ class CustomerController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Delete a single document (image, trade_license, nid) of a customer
+     */
+    public function deleteDocument(Request $request, $id)
+    {
+        try {
+            $customer = Customer::findOrFail($id);
+            $type = $request->input('type');
+
+            if (!in_array($type, ['image', 'trade_license', 'nid'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid document type.',
+                ], 422);
+            }
+
+            if ($customer->$type && file_exists(storage_path('app/public/' . $customer->$type))) {
+                unlink(storage_path('app/public/' . $customer->$type));
+            }
+
+            $customer->$type = null;
+            $customer->save();
+
+            $label = match ($type) {
+                'image' => 'Customer photo',
+                'trade_license' => 'Trade license',
+                'nid' => 'NID card',
+                default => 'Document',
+            };
+
+            return response()->json([
+                'status' => true,
+                'message' => "{$label} deleted successfully",
+                'data' => $customer,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete document: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload and store file directly without requiring PHP finfo extension
+     */
+    private function uploadCustomerFile($file, string $directory, string $prefix): string
+    {
+        $extension = $file->getClientOriginalExtension() ?: 'jpg';
+        $fileName = $prefix . '_' . time() . '_' . uniqid() . '.' . $extension;
+        $targetDir = storage_path('app/public/' . $directory);
+
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $file->move($targetDir, $fileName);
+
+        return $directory . '/' . $fileName;
     }
 }

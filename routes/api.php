@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('customerStore', [CustomerController::class, 'store'])->name('customer.store');
     Route::post('customerUpdate/{id}', [CustomerController::class, 'update'])->name('customer.update');
     Route::post('customerDelete/{id}', [CustomerController::class, 'destroy'])->name('customer.destroy');
+    Route::post('customerDeleteDocument/{id}', [CustomerController::class, 'deleteDocument'])->name('customer.deleteDocument');
 
     // brand 
     Route::get('brands', [BrandController::class, 'index'])->name('brand.index');

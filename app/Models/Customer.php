@@ -16,6 +16,8 @@ class Customer extends Model
         'phone',
         'address',
         'image',
+        'trade_license',
+        'nid',
         'credit_limit',
         'payment_type',
         'purchase',
