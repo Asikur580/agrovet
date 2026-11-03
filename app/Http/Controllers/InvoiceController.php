@@ -325,6 +325,23 @@ class InvoiceController extends Controller
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
+
+            if ($customer->payment_type === 'cash' && $validatedInvoice['sale_type'] === 'credit') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for cash invoices.',
+                    'data' => null
+                ], 422);
+            }
+
+            if ($customer->payment_type === 'credit' && $validatedInvoice['sale_type'] === 'cash') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for credit invoices.',
+                    'data' => null
+                ], 422);
+            }
+
             $customerCreditLimit = $customer->credit_limit;
 
             $custTotalPurchase = Invoice::where('cust_id', $customer->id)
@@ -576,6 +593,23 @@ class InvoiceController extends Controller
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validatedInvoice['cust_id']);
+
+            if ($customer->payment_type === 'cash' && $validatedInvoice['sale_type'] === 'credit') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for cash invoices.',
+                    'data' => null
+                ], 422);
+            }
+
+            if ($customer->payment_type === 'credit' && $validatedInvoice['sale_type'] === 'cash') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for credit invoices.',
+                    'data' => null
+                ], 422);
+            }
+
             $customerCreditLimit = $customer->credit_limit;
 
             $custTotalPurchase = Invoice::where('cust_id', $customer->id)

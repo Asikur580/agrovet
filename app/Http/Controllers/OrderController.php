@@ -211,6 +211,23 @@ class OrderController extends Controller
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validated['cust_id']);
+
+            if ($customer->payment_type === 'cash' && $validated['order_type'] === 'credit') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for cash orders.',
+                    'data' => null
+                ], 422);
+            }
+
+            if ($customer->payment_type === 'credit' && $validated['order_type'] === 'cash') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for credit orders.',
+                    'data' => null
+                ], 422);
+            }
+
             $customerCreditLimit = $customer->credit_limit;
 
             $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');
@@ -425,6 +442,23 @@ class OrderController extends Controller
 
             // Customer Credit Limit check
             $customer = Customer::findOrFail($validated['cust_id']);
+
+            if ($customer->payment_type === 'cash' && $validated['order_type'] === 'credit') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for cash orders.',
+                    'data' => null
+                ], 422);
+            }
+
+            if ($customer->payment_type === 'credit' && $validated['order_type'] === 'cash') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'This customer is only allowed for credit orders.',
+                    'data' => null
+                ], 422);
+            }
+
             $customerCreditLimit = $customer->credit_limit;
 
             $custTotalPurchase = Invoice::where('cust_id', $customer->id)->sum('grand_total');

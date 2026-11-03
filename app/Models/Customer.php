@@ -17,6 +17,7 @@ class Customer extends Model
         'address',
         'image',
         'credit_limit',
+        'payment_type',
         'purchase',
         'payment',
         'old_due',

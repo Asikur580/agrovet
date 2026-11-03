@@ -93,7 +93,12 @@ class CustomerController extends Controller
                 'address' => 'required|string|max:255',
                 'credit_limit' => 'nullable|numeric|min:0',
                 'old_due' => 'nullable|numeric|min:0',
+                'payment_type' => 'nullable|in:cash,credit,both',
             ]);
+
+            if (empty($validatedData['payment_type'])) {
+                $validatedData['payment_type'] = 'both';
+            }
 
 
             // Fetch the employee and their designation
@@ -190,7 +195,12 @@ class CustomerController extends Controller
                 'address' => 'required|string|max:255',
                 'old_due' => 'required|numeric|min:0',
                 'credit_limit' => 'required|numeric|min:0',
+                'payment_type' => 'nullable|in:cash,credit,both',
             ]);
+
+            if (empty($validatedData['payment_type'])) {
+                $validatedData['payment_type'] = 'both';
+            }
 
             // Fetch the employee and their designation
             $employee = Employee::with('designation')->findOrFail($validatedData['employee_id']);
