@@ -198,6 +198,10 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            if (auth()->check()) {
+                NotificationController::markInvoiceNotificationsAsRead($id, auth()->id());
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Invoice retrieved successfully',
@@ -492,6 +496,10 @@ class InvoiceController extends Controller
                 $this->smsService->sendSms($customer->phone, $message, $customer->id);
             }
 
+            // If created from an existing order, mark that order's unread notifications as read
+            if ($orderId) {
+                NotificationController::markOrderNotificationsAsRead($orderId);
+            }
 
             return response()->json([
                 'status' => true,
@@ -697,6 +705,8 @@ class InvoiceController extends Controller
             // Commit transaction
             DB::commit();
 
+            NotificationController::markInvoiceNotificationsAsRead($Id);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Invoice and products updated successfully',
@@ -736,6 +746,8 @@ class InvoiceController extends Controller
             // Commit the transaction
             DB::commit();
 
+            NotificationController::markInvoiceNotificationsAsRead($invoiceId);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Invoice and products deleted successfully',
@@ -759,6 +771,8 @@ class InvoiceController extends Controller
             'is_printed' => true,
             'printed_at' => now()
         ]);
+
+        NotificationController::markInvoiceNotificationsAsRead($id);
 
         return response()->json([
             'status' => true,

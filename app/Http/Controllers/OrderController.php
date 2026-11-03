@@ -353,6 +353,10 @@ class OrderController extends Controller
         try {
             $order = Order::with(['customer', 'employee', 'orderProducts.product'])->findOrFail($id);
 
+            if (auth()->check()) {
+                NotificationController::markOrderNotificationsAsRead($id, auth()->id());
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Order retrieved successfully.',
@@ -521,6 +525,8 @@ class OrderController extends Controller
 
             DB::commit();
 
+            NotificationController::markOrderNotificationsAsRead($id);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Order updated successfully.',
@@ -552,6 +558,8 @@ class OrderController extends Controller
             // Delete the order itself
             $order->delete();
 
+            NotificationController::markOrderNotificationsAsRead($id);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Order and its associated products deleted successfully.',
@@ -582,6 +590,8 @@ class OrderController extends Controller
         $old = $order->status;
         $order->status = $request->input('status');
         $order->save();
+
+        NotificationController::markOrderNotificationsAsRead($order->id);
 
         return response()->json([
             'status' => true,
