@@ -225,6 +225,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/customer-sales-report', [ReportController::class, 'generateSalesReport']);
     Route::get('/top-selling-products', [ReportController::class, 'topSellingProducts'])->name('report.topSellingProducts');
     Route::get('/cash-credit-sales-report', [ReportController::class, 'cashCreditSalesReport'])->name('report.cashCreditSalesReport');
+    Route::get('/employee-sales-summary', [ReportController::class, 'employeeSalesSummary'])->name('report.employeeSalesSummary');
 });
 
 

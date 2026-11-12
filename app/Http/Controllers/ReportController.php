@@ -2346,4 +2346,243 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Resolve employee IDs visible to the authenticated user based on designation hierarchy.
+     */
+    private function resolveScopedEmployeeIds($user, $filterEmployeeId = null): array
+    {
+        $designation = $user && $user->employee && $user->employee->designation
+            ? $user->employee->designation->slug
+            : 'admin';
+
+        if (in_array($designation, ['admin', 'super_admin', 'developer'], true)) {
+            if ($filterEmployeeId) {
+                return ['restricted' => true, 'denied' => false, 'ids' => collect([(int) $filterEmployeeId])];
+            }
+
+            return ['restricted' => false, 'denied' => false, 'ids' => collect()];
+        }
+
+        if (!$user || !$user->employee) {
+            return ['restricted' => true, 'denied' => true, 'ids' => collect()];
+        }
+
+        $ownEmployeeId = (int) $user->employee->id;
+
+        if ($designation === 'officer') {
+            $allowed = collect([$ownEmployeeId]);
+        } elseif ($designation === 'manager') {
+            $officerIds = Relation::where('relation_id', $ownEmployeeId)->pluck('employee_id');
+            $allowed = $officerIds->push($ownEmployeeId)->map(fn ($id) => (int) $id)->unique()->values();
+        } elseif ($designation === 'rsm') {
+            $managerIds = Relation::where('relation_id', $ownEmployeeId)->pluck('employee_id');
+            $officerIds = Relation::whereIn('relation_id', $managerIds)->pluck('employee_id');
+            $allowed = $managerIds->merge($officerIds)->push($ownEmployeeId)->map(fn ($id) => (int) $id)->unique()->values();
+        } else {
+            return ['restricted' => true, 'denied' => true, 'ids' => collect()];
+        }
+
+        if ($filterEmployeeId) {
+            $targetId = (int) $filterEmployeeId;
+            if (!$allowed->contains($targetId)) {
+                return ['restricted' => true, 'denied' => true, 'ids' => collect()];
+            }
+
+            return ['restricted' => true, 'denied' => false, 'ids' => collect([$targetId])];
+        }
+
+        return ['restricted' => true, 'denied' => false, 'ids' => $allowed];
+    }
+
+    /**
+     * Date-wise Total Sales, Cash Sales, Credit Sales & Employee-wise Breakdown.
+     */
+    public function employeeSalesSummary(Request $request)
+    {
+        try {
+            $allTime = $request->boolean('all_time');
+            $fromDateInput = $request->input('from_date');
+            $toDateInput = $request->input('to_date');
+            $filterEmployeeId = $request->input('employee_id');
+            $includeInvoices = $request->boolean('include_invoices');
+
+            $from = null;
+            $to = null;
+            if (!$allTime) {
+                if (!$fromDateInput && !$toDateInput) {
+                    $from = Carbon::today()->format('Y-m-d');
+                    $to = $from;
+                } else {
+                    $from = Carbon::parse($fromDateInput ?: $toDateInput)->format('Y-m-d');
+                    $to = Carbon::parse($toDateInput ?: $fromDateInput)->format('Y-m-d');
+                    if ($from > $to) {
+                        [$from, $to] = [$to, $from];
+                    }
+                }
+            }
+
+            $scope = $this->resolveScopedEmployeeIds($request->user(), $filterEmployeeId);
+            if ($scope['denied']) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'No sales data available for your role.',
+                    'data' => [
+                        'summary' => [
+                            'from_date' => $from,
+                            'to_date' => $to,
+                            'total_sales' => 0.0,
+                            'cash_sales' => 0.0,
+                            'credit_sales' => 0.0,
+                            'total_invoices' => 0,
+                            'cash_invoices' => 0,
+                            'credit_invoices' => 0,
+                            'cash_percentage' => 0.0,
+                            'credit_percentage' => 0.0,
+                            'active_selling_employees' => 0,
+                        ],
+                        'employees' => [],
+                        'invoices' => [],
+                    ],
+                ]);
+            }
+
+            $invoiceBaseQuery = Invoice::query();
+            if ($scope['restricted']) {
+                $invoiceBaseQuery->whereIn('invoices.employee_id', $scope['ids']);
+            }
+            if ($from && $to) {
+                $invoiceBaseQuery->where(function ($q) use ($from, $to) {
+                    $q->whereBetween('invoices.sale_date', [$from, $to])
+                        ->orWhereRaw('DATE(invoices.sale_date) BETWEEN ? AND ?', [$from, $to]);
+                });
+            }
+
+            $salesByEmployee = (clone $invoiceBaseQuery)
+                ->select(
+                    'invoices.employee_id',
+                    DB::raw("SUM(CASE WHEN LOWER(invoices.sale_type) = 'cash' THEN invoices.grand_total ELSE 0 END) as cash_sales"),
+                    DB::raw("SUM(CASE WHEN LOWER(invoices.sale_type) = 'credit' THEN invoices.grand_total ELSE 0 END) as credit_sales"),
+                    DB::raw('SUM(invoices.grand_total) as total_sales'),
+                    DB::raw("SUM(CASE WHEN LOWER(invoices.sale_type) = 'cash' THEN 1 ELSE 0 END) as cash_invoices"),
+                    DB::raw("SUM(CASE WHEN LOWER(invoices.sale_type) = 'credit' THEN 1 ELSE 0 END) as credit_invoices"),
+                    DB::raw('COUNT(*) as total_invoices')
+                )
+                ->groupBy('invoices.employee_id')
+                ->get()
+                ->keyBy('employee_id');
+
+            $sellingEmployeeIds = $salesByEmployee->keys()->filter()->values();
+
+            $employeesQuery = Employee::with('designation:id,name,slug')
+                ->where(function ($q) use ($sellingEmployeeIds) {
+                    $q->where('status', 'active');
+                    if ($sellingEmployeeIds->isNotEmpty()) {
+                        $q->orWhereIn('id', $sellingEmployeeIds);
+                    }
+                });
+
+            if ($scope['restricted']) {
+                $employeesQuery->whereIn('id', $scope['ids']);
+            }
+
+            $employees = $employeesQuery->get();
+
+            $employeeRows = $employees->map(function ($emp) use ($salesByEmployee) {
+                $row = $salesByEmployee->get($emp->id);
+                $cashSales = round((float) ($row->cash_sales ?? 0), 2);
+                $creditSales = round((float) ($row->credit_sales ?? 0), 2);
+                $totalSales = round((float) ($row->total_sales ?? 0), 2);
+
+                return [
+                    'employee_id' => $emp->id,
+                    'employee_code' => $emp->employee_id ?? '',
+                    'employee_name' => $emp->name,
+                    'designation' => $emp->designation->name ?? '',
+                    'territory' => $emp->territory ?? '',
+                    'phone' => $emp->phone ?? '',
+                    'status' => $emp->status,
+                    'cash_sales' => $cashSales,
+                    'credit_sales' => $creditSales,
+                    'total_sales' => $totalSales,
+                    'cash_invoices' => (int) ($row->cash_invoices ?? 0),
+                    'credit_invoices' => (int) ($row->credit_invoices ?? 0),
+                    'total_invoices' => (int) ($row->total_invoices ?? 0),
+                ];
+            })
+            ->sort(function ($a, $b) {
+                if ($a['total_sales'] !== $b['total_sales']) {
+                    return $b['total_sales'] <=> $a['total_sales'];
+                }
+
+                return strcmp($a['employee_name'], $b['employee_name']);
+            })
+            ->values();
+
+            $totalSales = round((float) $employeeRows->sum('total_sales'), 2);
+            $cashSales = round((float) $employeeRows->sum('cash_sales'), 2);
+            $creditSales = round((float) $employeeRows->sum('credit_sales'), 2);
+            $totalInvoices = (int) $employeeRows->sum('total_invoices');
+            $cashInvoices = (int) $employeeRows->sum('cash_invoices');
+            $creditInvoices = (int) $employeeRows->sum('credit_invoices');
+
+            $cashPercentage = $totalSales > 0 ? round(($cashSales / $totalSales) * 100, 1) : 0.0;
+            $creditPercentage = $totalSales > 0 ? round(($creditSales / $totalSales) * 100, 1) : 0.0;
+            $activeSellingEmployees = $employeeRows->where('total_sales', '>', 0)->count();
+
+            $formattedInvoices = [];
+            if ($includeInvoices) {
+                $formattedInvoices = (clone $invoiceBaseQuery)
+                    ->with(['customer:id,customer_name,phone', 'employee:id,name,employee_id'])
+                    ->orderByDesc('sale_date')
+                    ->orderByDesc('id')
+                    ->get()
+                    ->map(function ($inv) {
+                        return [
+                            'id' => $inv->id,
+                            'invoice_id' => $inv->invoiceId ?? ('INV-' . $inv->id),
+                            'sale_date' => $inv->sale_date,
+                            'sale_type' => $inv->sale_type ? strtolower($inv->sale_type) : 'cash',
+                            'customer_name' => $inv->customer->customer_name ?? 'N/A',
+                            'customer_phone' => $inv->customer->phone ?? '',
+                            'employee_id' => $inv->employee_id,
+                            'employee_name' => $inv->employee->name ?? 'N/A',
+                            'total_item' => (int) $inv->total_item,
+                            'grand_total' => (float) $inv->grand_total,
+                            'paid' => (float) $inv->paid,
+                            'due' => (float) $inv->due,
+                        ];
+                    })
+                    ->values();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Employee sales summary retrieved successfully',
+                'data' => [
+                    'summary' => [
+                        'from_date' => $from,
+                        'to_date' => $to,
+                        'total_sales' => $totalSales,
+                        'cash_sales' => $cashSales,
+                        'credit_sales' => $creditSales,
+                        'total_invoices' => $totalInvoices,
+                        'cash_invoices' => $cashInvoices,
+                        'credit_invoices' => $creditInvoices,
+                        'cash_percentage' => $cashPercentage,
+                        'credit_percentage' => $creditPercentage,
+                        'active_selling_employees' => $activeSellingEmployees,
+                    ],
+                    'employees' => $employeeRows,
+                    'invoices' => $formattedInvoices,
+                ],
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve employee sales summary',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
