@@ -136,7 +136,11 @@ class UserController extends Controller
             ]);
 
             // Assign permissions to the user         
-            $user->syncPermissions($request->permission);
+            $validPermissions = Permission::whereIn('id', $request->permission)
+                ->where('guard_name', 'sanctum')
+                ->pluck('id')
+                ->toArray();
+            $user->syncPermissions($validPermissions);
 
             DB::commit();
             return response()->json([
@@ -188,7 +192,11 @@ class UserController extends Controller
                 'password' => $validatedData['password'] ? Hash::make($validatedData['password']) : $user->password,
             ]);
 
-            $user->syncPermissions($request->permission);
+            $validPermissions = Permission::whereIn('id', $request->permission)
+                ->where('guard_name', 'sanctum')
+                ->pluck('id')
+                ->toArray();
+            $user->syncPermissions($validPermissions);
 
             DB::commit();
             return response()->json(['status' => true, 'message' => 'User updated successfully', 'data' => $user]);

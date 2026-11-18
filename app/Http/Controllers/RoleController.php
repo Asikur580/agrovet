@@ -170,10 +170,17 @@ class RoleController extends Controller
             $role = Role::where('id', $roleId)
                 ->where('guard_name', 'sanctum') // Ensure the guard matches
                 ->firstOrFail();
-            $role->syncPermissions($request->permission);
-            $currentUserId = $request->user()->id;
-            $user = User::findOrFail(3);
-            $user->syncPermissions($request->permission);
+
+            $validPermissions = Permission::whereIn('id', $request->permission)
+                ->where('guard_name', 'sanctum')
+                ->pluck('id')
+                ->toArray();
+
+            $role->syncPermissions($validPermissions);
+            $user = User::find(3);
+            if ($user) {
+                $user->syncPermissions($validPermissions);
+            }
 
             return response()->json([
                 'status' => true,

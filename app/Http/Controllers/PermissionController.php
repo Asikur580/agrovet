@@ -39,7 +39,7 @@ class PermissionController extends Controller
 
             $permission = Permission::create([
                 'name' => $request->name,                
-                //'guard_name' => 'web',
+                'guard_name' => 'sanctum',
             ]);
 
             return response()->json([
@@ -89,7 +89,7 @@ class PermissionController extends Controller
 
             $permission->update([
                 'name' => $request->name,
-                //'guard_name' => 'web',
+                'guard_name' => 'sanctum',
             ]);
 
             return response()->json([

@@ -328,9 +328,20 @@ class CustomerController extends Controller
             ]);
         }
     }
-    public function toggleSms($id)
+    public function toggleSms(Request $request, $id)
     {
         try {
+            $user = $request->user();
+            if ($user) {
+                $userPermissions = $user->getDirectPermissions()->pluck('name');
+                if (!$userPermissions->contains('Developer') && !$userPermissions->contains('Customer-sms') && !$userPermissions->contains('Customer-sms-toggle')) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'You do not have permission to toggle SMS status',
+                    ], 403);
+                }
+            }
+
             $customer = Customer::findOrFail($id);
             $customer->sms_enabled = !$customer->sms_enabled;
             $customer->save();
