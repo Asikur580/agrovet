@@ -65,7 +65,16 @@ class CustomerController extends Controller
     public function customerByEmployee($id)
     {
         try {
-            $customers = Customer::where('employee_id', $id)->get();
+            $customers = Customer::with('employee:id,name')
+                ->withSum('invoices as total_purchases', 'grand_total')
+                ->withSum('payments as total_payments', 'amount')
+                ->where('employee_id', $id)
+                ->get();
+
+            $customers = $customers->map(function ($customer) {
+                $customer->due = (($customer->old_due ?? 0) + ($customer->total_purchases ?? 0)) - ($customer->total_payments ?? 0);
+                return $customer;
+            });
 
             return response()->json([
                 'status' => true,
