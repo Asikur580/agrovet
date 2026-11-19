@@ -18,6 +18,7 @@ use App\Notifications\InvoiceNotification;
 use Illuminate\Support\Facades\Mail;
 use App\Services\SmsService;
 use App\Services\CreditUsageService;
+use App\Services\InvoiceDueService;
 
 class InvoiceController extends Controller
 {
@@ -501,6 +502,11 @@ class InvoiceController extends Controller
                 NotificationController::markOrderNotificationsAsRead($orderId);
             }
 
+            if (!empty($invoice->cust_id)) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$invoice->cust_id);
+                $invoice->refresh();
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Invoice and products created successfully',
@@ -707,6 +713,11 @@ class InvoiceController extends Controller
 
             NotificationController::markInvoiceNotificationsAsRead($Id);
 
+            if (!empty($invoice->cust_id)) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$invoice->cust_id);
+                $invoice->refresh();
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Invoice and products updated successfully',
@@ -728,6 +739,7 @@ class InvoiceController extends Controller
         try {
             // Find the existing invoice
             $invoice = Invoice::findOrFail($invoiceId);
+            $custId = $invoice->cust_id;
 
             // Revert stock for each product in the invoice
             foreach ($invoice->products as $invoiceProduct) {
@@ -745,6 +757,10 @@ class InvoiceController extends Controller
 
             // Commit the transaction
             DB::commit();
+
+            if ($custId) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$custId);
+            }
 
             NotificationController::markInvoiceNotificationsAsRead($invoiceId);
 

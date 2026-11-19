@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\SmsService;
+use App\Services\InvoiceDueService;
 
 class PaymentController extends Controller
 {
@@ -55,36 +56,10 @@ class PaymentController extends Controller
             // পেমেন্ট তৈরি করা
             $payment = Payment::create($validatedData);
 
-            // // যদি কাস্টমার থাকে তাহলে ইনভয়েসের due অ্যাডজাস্ট করবো
-            // if ($validatedData['cust_id']) {
-            //     $customerId = $validatedData['cust_id'];
-            //     $paymentAmount = $validatedData['amount'];
-
-            //     // ওই কাস্টমারের due থাকা ইনভয়েসগুলো খুঁজে বের করা
-            //     $invoices = Invoice::where('cust_id', $customerId)
-            //         ->where('due', '>', 0)
-            //         ->orderBy('created_at', 'asc') // পুরনো ইনভয়েস আগে পেমেন্ট হবে
-            //         ->get();
-
-            //     foreach ($invoices as $invoice) {
-            //         if ($paymentAmount <= 0) {
-            //             break; // পেমেন্ট শেষ হলে লুপ বন্ধ
-            //         }
-
-            //         if ($invoice->due <= $paymentAmount) {
-            //             // যদি পুরো ইনভয়েস পরিশোধ করা সম্ভব হয়
-            //             $paymentAmount -= $invoice->due;
-            //             $invoice->due = 0; // ইনভয়েস পুরো পরিশোধ হয়ে গেছে
-            //         } else {
-            //             // ইনভয়েস আংশিক পরিশোধ হবে
-            //             $invoice->due -= $paymentAmount;
-            //             $paymentAmount = 0;
-            //         }
-
-            //         $invoice->save(); // ইনভয়েস আপডেট সেভ করা
-            //     }
-                
-            // }
+            // কাস্টমার পেমেন্ট হলে FIFO পদ্ধতিতে ইনভয়েসের due ও paid অ্যাডজাস্ট করা
+            if (!empty($payment->cust_id)) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$payment->cust_id);
+            }
 
             DB::commit(); // সব ঠিক থাকলে ট্রানজেকশন কমিট করা
 
@@ -254,7 +229,16 @@ class PaymentController extends Controller
             ]);
 
             $payment = Payment::findOrFail($id);
+            $previousCustId = $payment->cust_id;
             $payment->update($validatedData);
+
+            // Re-sync invoice dues for previous and current customer
+            if ($previousCustId) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$previousCustId);
+            }
+            if (!empty($payment->cust_id) && (int)$payment->cust_id !== (int)$previousCustId) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$payment->cust_id);
+            }
 
             return response()->json([
                 'status' => true,
@@ -274,7 +258,12 @@ class PaymentController extends Controller
     {
         try {
             $payment = Payment::findOrFail($id);
+            $custId = $payment->cust_id;
             $payment->delete();
+
+            if ($custId) {
+                InvoiceDueService::syncCustomerInvoiceDues((int)$custId);
+            }
 
             return response()->json([
                 'status' => true,

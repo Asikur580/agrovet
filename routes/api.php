@@ -256,4 +256,53 @@ Route::get('/sms-templates/{id}', [SmsTemplateController::class, 'show']);
 Route::post('/sms-templates/{id}', [SmsTemplateController::class, 'update']);
 Route::delete('/sms-templates/{id}', [SmsTemplateController::class, 'destroy']);
 
+// Utility / Maintenance Routes (Callable for one-time sync and cache clearing on live/local server)
+Route::get('/sync-invoice-dues', function (Request $request) {
+    try {
+        $customerId = $request->query('customer_id');
+        if ($customerId) {
+            \App\Services\InvoiceDueService::syncCustomerInvoiceDues((int)$customerId);
+            return response()->json([
+                'status' => true,
+                'message' => "Successfully synced invoice dues for customer ID: {$customerId}",
+            ]);
+        }
+
+        $result = \App\Services\InvoiceDueService::syncAllInvoiceDues();
+        return response()->json([
+            'status' => true,
+            'message' => 'Successfully synced all invoice dues via FIFO',
+            'data' => $result,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to sync invoice dues: ' . $e->getMessage(),
+        ], 500);
+    }
+});
+
+Route::get('/clear-cache', function () {
+    try {
+        if (class_exists(\Spatie\Permission\PermissionRegistrar::class)) {
+            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        }
+        \Illuminate\Support\Facades\Artisan::call('permission:cache-reset');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cache and permissions cleared successfully!',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to clear cache: ' . $e->getMessage(),
+        ], 500);
+    }
+});
+
+
 
