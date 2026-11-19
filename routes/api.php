@@ -25,7 +25,6 @@ use App\Http\Controllers\SmsTemplateController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Services\InvoiceDueService;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -278,7 +277,7 @@ Route::get('/sync-invoice-dues', function (Request $request) {
             'message' => 'Successfully synced all invoice dues via FIFO',
             'data' => $result,
         ]);
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         return response()->json([
             'status' => false,
             'message' => 'Failed to sync invoice dues: ' . $e->getMessage(),
@@ -300,7 +299,7 @@ Route::get('/clear-cache', function () {
             'status' => true,
             'message' => 'Cache and permissions cleared successfully!',
         ]);
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         return response()->json([
             'status' => false,
             'message' => 'Failed to clear cache: ' . $e->getMessage(),
