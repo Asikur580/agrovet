@@ -14,18 +14,22 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SmsController;
-use App\Http\Controllers\SmsTemplateController;
 use App\Http\Controllers\SmsHistoryController;
+use App\Http\Controllers\SmsTemplateController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\ProfileController;
+use App\Services\InvoiceDueService;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\PermissionRegistrar;
 
 Route::post('/login', [UserController::class, 'login'])->name('user.login'); // Public Route
 
@@ -261,20 +265,20 @@ Route::get('/sync-invoice-dues', function (Request $request) {
     try {
         $customerId = $request->query('customer_id');
         if ($customerId) {
-            \App\Services\InvoiceDueService::syncCustomerInvoiceDues((int)$customerId);
+            InvoiceDueService::syncCustomerInvoiceDues((int)$customerId);
             return response()->json([
                 'status' => true,
                 'message' => "Successfully synced invoice dues for customer ID: {$customerId}",
             ]);
         }
 
-        $result = \App\Services\InvoiceDueService::syncAllInvoiceDues();
+        $result = InvoiceDueService::syncAllInvoiceDues();
         return response()->json([
             'status' => true,
             'message' => 'Successfully synced all invoice dues via FIFO',
             'data' => $result,
         ]);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'status' => false,
             'message' => 'Failed to sync invoice dues: ' . $e->getMessage(),
@@ -284,19 +288,19 @@ Route::get('/sync-invoice-dues', function (Request $request) {
 
 Route::get('/clear-cache', function () {
     try {
-        if (class_exists(\Spatie\Permission\PermissionRegistrar::class)) {
-            app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        if (class_exists(PermissionRegistrar::class)) {
+            app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
         }
-        \Illuminate\Support\Facades\Artisan::call('permission:cache-reset');
-        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-        \Illuminate\Support\Facades\Artisan::call('config:clear');
-        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        Artisan::call('permission:cache-reset');
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('route:clear');
 
         return response()->json([
             'status' => true,
             'message' => 'Cache and permissions cleared successfully!',
         ]);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'status' => false,
             'message' => 'Failed to clear cache: ' . $e->getMessage(),
